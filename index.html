@@ -3,436 +3,296 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Weingut – Prototype 0.3</title>
+<title>Weingut – Prototype 0.4</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#15120f;color:#f6ead8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{margin:0;background:#14110e;color:#f7ead7;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:1000px;margin:auto;padding:10px 14px 32px}
+.top{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;background:#14110eee;backdrop-filter:blur(12px);padding:7px 0 10px}
+.brand{font-weight:950;font-size:25px}.sub{font-size:12px;color:#bda991}.money{font-size:20px;font-weight:900}
+.tabs{position:sticky;top:60px;z-index:29;display:flex;gap:7px;overflow:auto;padding:4px 0 9px;background:#14110eee;backdrop-filter:blur(12px)}
 button,select{font:inherit}
-.app{max-width:980px;margin:auto;padding:12px 14px 28px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;background:#15120fdd;backdrop-filter:blur(10px);padding:6px 0 10px;z-index:20}
-.brand{font-size:25px;font-weight:900}.sub{color:#bca990;font-size:12px}.money{font-size:20px;font-weight:900;white-space:nowrap}
-.tabs{display:flex;gap:7px;overflow:auto;margin:8px 0 12px;position:sticky;top:58px;z-index:19;padding-bottom:2px}
-button{border:1px solid #5b4934;background:#30271e;color:#f6ead8;border-radius:12px;padding:10px 13px;font-weight:800}
-button:active{transform:scale(.98)}
-button.primary{background:#c79a58;color:#17120d;border-color:#c79a58}
-button.danger{border-color:#73463f}
+button{border:1px solid #5d4933;background:#30271f;color:#f7ead7;border-radius:12px;padding:10px 12px;font-weight:800}
+button:active{transform:scale(.98)} button.primary{background:#c89c5b;color:#17120e;border-color:#c89c5b}
 button:disabled{opacity:.45}
-select{width:100%;border:1px solid #5b4934;background:#30271e;color:#f6ead8;border-radius:10px;padding:10px}
-.card{background:linear-gradient(160deg,#2b231b,#211a15);border:1px solid #5a4732;border-radius:17px;padding:15px;margin-top:12px;box-shadow:0 7px 24px #00000018}
-h2{font-size:19px;margin:0 0 10px}.small{font-size:12px;color:#bca990}.muted{color:#bca990}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
-.metric{background:#33291f;border-radius:12px;padding:10px}.metric small{display:block;color:#bca990;font-size:11px}.metric strong{font-size:18px}
-.row{display:flex;justify-content:space-between;gap:10px;margin:8px 0}.bar{height:7px;background:#15120f;border-radius:8px;overflow:hidden}.fill{height:100%;background:#c79a58}
-.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
-.notice{background:#352b20;border-radius:11px;padding:10px;color:#dfcfb9;font-size:13px;line-height:1.45}
+.card{background:linear-gradient(160deg,#2b231b,#201914);border:1px solid #5b4731;border-radius:17px;padding:15px;margin-top:12px}
+h2{font-size:19px;margin:0 0 10px}.small{font-size:12px;color:#bda991}.muted{color:#bda991}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{background:#33291f;border-radius:12px;padding:10px}.metric small{display:block;color:#bda991}.metric strong{font-size:18px}
+.row{display:flex;justify-content:space-between;gap:10px;margin:8px 0}.bar{height:7px;background:#15110e;border-radius:9px;overflow:hidden}.fill{height:100%;background:#c89c5b}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.notice{background:#352b21;border-radius:11px;padding:10px;font-size:13px;line-height:1.48}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tag{display:inline-block;background:#433528;border-radius:99px;padding:4px 8px;margin:2px;font-size:11px;color:#e0ccb0}
-.good{color:#d9bd83}.warn{color:#e0a66e}.bad{color:#df8277}
-#field{position:relative;height:355px;overflow:hidden;border-radius:14px;background:linear-gradient(160deg,#a1b477,#607b49);border:2px solid #796441;touch-action:none}
-.hill{position:absolute;width:150%;height:48%;left:-25%;bottom:-21%;background:#4f683d;border-radius:50% 50% 0 0;opacity:.48}
-.rowline{position:absolute;left:5%;width:90%;height:8px;background:#5b4228;border-radius:8px}
+select{width:100%;background:#30271f;color:#f7ead7;border:1px solid #5d4933;border-radius:10px;padding:10px}
+#field{position:relative;height:360px;overflow:hidden;border-radius:15px;background:linear-gradient(165deg,#a5b979,#617c4a);border:2px solid #796441;touch-action:none}
+.hill{position:absolute;width:150%;height:48%;left:-25%;bottom:-21%;background:#4e673c;border-radius:50% 50% 0 0;opacity:.45}
+.rowline{position:absolute;left:5%;width:90%;height:8px;background:#5a4128;border-radius:8px}
 .vine{position:absolute;width:7px;height:24px;background:#49341f;border-radius:5px;transform:translate(-50%,-50%)}
-.leaf{position:absolute;width:16px;height:10px;background:#2d5a2c;border-radius:50%;transform:translate(-50%,-50%)}
-.grape{position:absolute;width:9px;height:9px;background:#65386d;border-radius:50%;transform:translate(-50%,-50%)}
-.player{position:absolute;width:19px;height:19px;border-radius:50%;background:#f0d18d;border:3px solid #312419;transform:translate(-50%,-50%);z-index:5}
-.seasonbar{display:flex;gap:5px;margin:10px 0}.seasondot{flex:1;height:7px;background:#433629;border-radius:8px}.seasondot.on{background:#c79a58}
-.wine{border:1px solid #654f35;background:#211a14;border-radius:14px;padding:13px;margin-top:9px}
-.wine-title{display:flex;justify-content:space-between;gap:8px}.score{font-size:28px;font-weight:900}
-.winegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}.wine-stat{background:#31271e;border-radius:10px;padding:8px}.wine-stat small{display:block;color:#bca990;font-size:10px}.wine-stat b{font-size:15px}
-.log{max-height:220px;overflow:auto;font-size:13px;line-height:1.45}.log div{padding:5px 0;border-bottom:1px solid #3a2e23}
-.hr{height:1px;background:#4a3a2b;margin:12px 0}
+.leaf{position:absolute;width:16px;height:10px;background:#2d5b2d;border-radius:50%;transform:translate(-50%,-50%)}
+.grape{position:absolute;width:11px;height:11px;background:#63376b;border-radius:50%;transform:translate(-50%,-50%);z-index:2;box-shadow:0 0 0 2px #ffffff22}
+.grape.done{opacity:.18;transform:translate(-50%,-50%) scale(.7)}
+.task-target{position:absolute;width:27px;height:27px;border:2px dashed #f3d38f;border-radius:50%;transform:translate(-50%,-50%);z-index:8;animation:pulse 1.1s infinite}
+@keyframes pulse{50%{transform:translate(-50%,-50%) scale(1.2);opacity:.55}}
+.player{position:absolute;width:19px;height:19px;border-radius:50%;background:#f0d18d;border:3px solid #312419;transform:translate(-50%,-50%);z-index:9}
+.taskbar{margin-top:10px}.progress{height:12px;background:#15110e;border-radius:9px;overflow:hidden}.progress>div{height:100%;background:#c89c5b;width:0}
+.task-title{display:flex;justify-content:space-between;gap:8px}.pill{display:inline-block;background:#443528;padding:4px 8px;border-radius:99px;font-size:11px;margin:2px}
+.hr{height:1px;background:#49382a;margin:12px 0}
+.wine{border:1px solid #654f35;background:#211a14;border-radius:14px;padding:13px;margin-top:9px}.wine-title{display:flex;justify-content:space-between}.score{font-size:28px;font-weight:900}
+.winegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:8px}.wine-stat{background:#31271e;border-radius:10px;padding:8px}.wine-stat small{display:block;color:#bda991;font-size:10px}.wine-stat b{font-size:15px}
+.story{border-left:3px solid #c89c5b;padding:10px 12px;background:#2c241c;border-radius:0 12px 12px 0;line-height:1.55}
+.story h3{margin:0 0 6px}.quote{font-style:italic;color:#dfcba9}
+.log{max-height:220px;overflow:auto;font-size:13px}.log div{padding:5px 0;border-bottom:1px solid #392d23}
 @media(min-width:720px){.grid{grid-template-columns:repeat(4,1fr)}.winegrid{grid-template-columns:repeat(4,1fr)}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="top">
-    <div><div class="brand">🍇 Weingut</div><div class="sub" id="yearLabel">Jahr 1 · Frühjahr</div></div>
-    <div class="money" id="moneyLabel">1.000 €</div>
-  </div>
+<div class="top">
+  <div><div class="brand">🍇 Weingut</div><div class="sub" id="yearLabel"></div></div>
+  <div class="money" id="moneyLabel"></div>
+</div>
 
-  <div class="tabs">
-    <button class="tab active" id="tabV" onclick="showTab('v')">🌱 Weinberg</button>
-    <button class="tab" id="tabK" onclick="showTab('k')">🍷 Keller</button>
-    <button class="tab" id="tabW" onclick="showTab('w')">🏚️ Weingut</button>
-  </div>
+<div class="tabs">
+  <button id="tabV" onclick="showTab('v')">🌱 Weinberg</button>
+  <button id="tabK" onclick="showTab('k')">🍷 Keller</button>
+  <button id="tabW" onclick="showTab('w')">🏚️ Weingut</button>
+  <button id="tabS" onclick="showTab('s')">📖 Dieter & Walter</button>
+</div>
 
-  <section id="viewV">
-    <div class="card">
-      <h2>🌄 Dieters Weinberg</h2>
-      <div class="grid">
-        <div class="metric"><small>Fläche</small><strong id="areaVal">–</strong></div>
-        <div class="metric"><small>Boden</small><strong id="soilVal">–</strong></div>
-        <div class="metric"><small>Lage</small><strong id="slopeVal">–</strong></div>
-        <div class="metric"><small>Potenzial</small><strong id="potentialVal">–</strong></div>
-      </div>
-      <div class="row"><span>☀️ Sonneneinstrahlung</span><b id="sunVal">–</b></div><div class="bar"><div class="fill" id="sunBar"></div></div>
-      <div class="row"><span>💧 Wasserhaushalt</span><b id="waterVal">–</b></div><div class="bar"><div class="fill" id="waterBar"></div></div>
-      <div class="row"><span>❄️ Frostgefährdung</span><b id="frostVal">–</b></div><div class="bar"><div class="fill" id="frostBar"></div></div>
-      <div class="row"><span>🦠 Krankheitsdruck</span><b id="diseaseVal">–</b></div><div class="bar"><div class="fill" id="diseaseBar"></div></div>
-      <div class="row"><span>🪨 Terroir-Fit</span><b id="terroirVal">–</b></div><div class="bar"><div class="fill" id="terroirBar"></div></div>
+<section id="viewV">
+<div class="card">
+<h2>🌄 Dieters Weinberg</h2>
+<div class="grid">
+<div class="metric"><small>Fläche</small><strong id="areaVal">–</strong></div>
+<div class="metric"><small>Boden</small><strong id="soilVal">–</strong></div>
+<div class="metric"><small>Lage</small><strong id="slopeVal">–</strong></div>
+<div class="metric"><small>Potenzial</small><strong id="potentialVal">–</strong></div>
+</div>
+<div class="row"><span>☀️ Sonne</span><b id="sunVal">–</b></div><div class="bar"><div class="fill" id="sunBar"></div></div>
+<div class="row"><span>💧 Wasser</span><b id="waterVal">–</b></div><div class="bar"><div class="fill" id="waterBar"></div></div>
+<div class="row"><span>❄️ Frost</span><b id="frostVal">–</b></div><div class="bar"><div class="fill" id="frostBar"></div></div>
+<div class="row"><span>🦠 Krankheitsdruck</span><b id="diseaseVal">–</b></div><div class="bar"><div class="fill" id="diseaseBar"></div></div>
+<div class="row"><span>🪨 Terroir-Fit</span><b id="terroirVal">–</b></div><div class="bar"><div class="fill" id="terroirBar"></div></div>
+<div class="hr"></div>
+<div class="split">
+<div><div class="small">Rebsorte</div><select id="varietySelect"></select></div>
+<div><div class="small">Rebenzustand</div><div class="notice" id="careState"></div></div>
+</div>
+<div class="actions">
+<button onclick="startTask('pruning')">✂️ Rebschnitt</button>
+<button onclick="startTask('care')">🌿 Pflege</button>
+<button onclick="startTask('protect')">🛡️ Pflanzenschutz</button>
+<button onclick="startTask('harvest')">🍇 Ernte</button>
+<button onclick="startTask('irrigate')">💧 Bewässern</button>
+</div>
+<div id="taskPanel" style="display:none" class="card">
+  <div class="task-title"><b id="taskTitle">Arbeit</b><span id="taskCount" class="pill"></span></div>
+  <div class="small" id="taskHint"></div>
+  <div class="taskbar"><div class="progress"><div id="taskProgress"></div></div></div>
+  <div class="actions"><button class="primary" id="finishTaskBtn" onclick="finishTask()">Arbeit abschließen</button><button onclick="cancelTask()">Abbrechen</button></div>
+</div>
+</div>
 
-      <div class="hr"></div>
-      <div class="split">
-        <div><div class="small">Rebsorte</div><select id="varietySelect"></select></div>
-        <div><div class="small">Aktueller Pflegezustand</div><div class="notice" id="careState">–</div></div>
-      </div>
-      <div class="actions">
-        <button class="primary" onclick="probeSoil()">🔎 Bodenprobe · 35 €</button>
-        <button onclick="careVines()">✂️ Reben pflegen · 20 €</button>
-        <button onclick="protectVines()">🛡️ Pflanzenschutz · 45 €</button>
-        <button onclick="irrigate()">💧 Bewässern · 30 €</button>
-      </div>
-    </div>
+<div class="card">
+<h2>🍃 Parzelle</h2>
+<div id="field"><div class="hill"></div><div class="player" id="player"></div></div>
+<div class="small">Wische zum Bewegen. Bei einer Arbeit erscheinen Ziele im Weinberg – tippe sie an.</div>
+</div>
 
-    <div class="card">
-      <h2>🍃 Parzelle</h2>
-      <div id="field"><div class="hill"></div><div class="player" id="player"></div></div>
-      <div class="small">Wische über den Weinberg, um dich zu bewegen.</div>
-    </div>
+<div class="card">
+<h2>🗓️ Jahresverlauf</h2>
+<div id="seasonBar" style="display:flex;gap:5px;margin:10px 0"></div>
+<div class="notice" id="seasonText"></div>
+<div class="actions"><button class="primary" onclick="nextSeason()">⏭️ Nächste Jahreszeit</button></div>
+</div>
 
-    <div class="card">
-      <h2>🗓️ Jahresverlauf</h2>
-      <div class="seasonbar" id="seasonBar"></div>
-      <div class="notice" id="seasonText">–</div>
-      <div class="actions">
-        <button class="primary" onclick="nextSeason()">⏭️ Nächste Jahreszeit</button>
-        <button onclick="harvestGrapes()">🍇 Ernte prüfen</button>
-      </div>
-    </div>
+<div class="card">
+<h2>👴 Walter</h2>
+<div class="notice" id="walterText">„Na, dann wollen wir mal sehen, was aus Dieters altem Weinberg noch wird.“</div>
+<div class="actions"><button onclick="startWalterJob()">🤝 Bei Walter arbeiten</button><button onclick="walterTip()">💬 Walter fragen</button><button onclick="showTab('s')">📖 Geschichte</button></div>
+</div>
+</section>
 
-    <div class="card">
-      <h2>👴 Walter</h2>
-      <div class="notice" id="walterText">„Na, dann wollen wir mal sehen, was aus Dieters altem Weinberg noch wird.“</div>
-      <div class="actions"><button onclick="walterJob()">🤝 Lohnarbeit</button><button onclick="walterTip()">💬 Tipp</button></div>
-    </div>
-  </section>
+<section id="viewK" style="display:none">
+<div class="card"><h2>🍷 Keller</h2><div class="notice">Ein Wein ist mehr als eine Qualitätszahl. Reife verändert seinen Charakter.</div><div id="winesList"></div></div>
+</section>
 
-  <section id="viewK" style="display:none">
-    <div class="card">
-      <h2>🍷 Keller</h2>
-      <div class="notice">Hier zählt nicht nur eine Zahl. Ein Jahrgang besteht aus vielen Eigenschaften – und Reife verändert ihn über die Zeit.</div>
-      <div id="winesList"></div>
-    </div>
-  </section>
+<section id="viewW" style="display:none">
+<div class="card"><h2>🏚️ Das alte Weingut</h2>
+<div class="grid">
+<div class="metric"><small>Keller</small><strong id="cellarCond"></strong></div><div class="metric"><small>Presse</small><strong id="pressCond"></strong></div>
+<div class="metric"><small>Schlepper</small><strong id="tractorCond"></strong></div><div class="metric"><small>Werkzeug</small><strong id="toolCond"></strong></div>
+</div>
+<div class="actions">
+<button onclick="repairItem('cellar',180)">🔧 Keller · 180 €</button><button onclick="repairItem('press',140)">🔧 Presse · 140 €</button>
+<button onclick="repairItem('tractor',220)">🔧 Schlepper · 220 €</button><button onclick="repairItem('tools',90)">🔧 Werkzeug · 90 €</button>
+</div></div>
+<div class="card"><h2>🎯 Ziele</h2><div class="notice" id="goals"></div></div>
+</section>
 
-  <section id="viewW" style="display:none">
-    <div class="card">
-      <h2>🏚️ Das alte Weingut</h2>
-      <div class="grid">
-        <div class="metric"><small>Keller</small><strong id="cellarCond">32/100</strong></div>
-        <div class="metric"><small>Presse</small><strong id="pressCond">18/100</strong></div>
-        <div class="metric"><small>Schlepper</small><strong id="tractorCond">24/100</strong></div>
-        <div class="metric"><small>Werkzeug</small><strong id="toolCond">41/100</strong></div>
-      </div>
-      <div class="actions">
-        <button onclick="repairItem('cellar',180)">🔧 Keller · 180 €</button>
-        <button onclick="repairItem('press',140)">🔧 Presse · 140 €</button>
-        <button onclick="repairItem('tractor',220)">🔧 Schlepper · 220 €</button>
-        <button onclick="repairItem('tools',90)">🔧 Werkzeug · 90 €</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>🎯 Erste Ziele</h2>
-      <div class="notice" id="goals">–</div>
-    </div>
-  </section>
+<section id="viewS" style="display:none">
+<div class="card">
+<h2>📖 Die Geschichte von Dieter & Walter</h2>
+<div class="notice">Die Geschichte wird Kapitel für Kapitel freigeschaltet. Manche Kapitel hängen davon ab, was du im Weinberg erlebt hast.</div>
+<div id="storyList"></div>
+</div>
+</section>
 
-  <div class="card">
-    <h2>📖 Hofbuch</h2>
-    <div class="log" id="log"></div>
-  </div>
+<div class="card"><h2>📓 Hofbuch</h2><div class="log" id="log"></div></div>
 </div>
 
 <script>
-const seasons = ["Frühjahr","Sommer","Spätsommer","Herbst / Ernte","Winter"];
-const soilData = {
-  "Kalk-Lehm": {sun:4,water:6,acid:7,body:7,fruit:5,tannin:6,desc:"ausgeglichen, mineralisch, guter Allrounder"},
-  "sandiger Lehm": {sun:6,water:2,acid:5,body:4,fruit:8,tannin:3,desc:"warm und locker, früh reifend, fruchtbetont"},
-  "Ton": {sun:2,water:8,acid:4,body:9,fruit:4,tannin:8,desc:"speichert Wasser, kräftige und strukturierte Weine"},
-  "Schiefer": {sun:8,water:1,acid:9,body:5,fruit:7,tannin:4,desc:"wärmt schnell auf, hohe Spannung und Mineralität"},
-  "Kies": {sun:9,water:-1,acid:5,body:6,fruit:9,tannin:5,desc:"sehr warm, trocken, aromatisch – aber wasserhungrig"},
-  "Kalkstein": {sun:5,water:4,acid:10,body:6,fruit:6,tannin:6,desc:"frische Säure, feine Struktur und lange Entwicklung"}
-};
-const varieties = {
-  "Spätburgunder": {ideal:["Kalk-Lehm","Kalkstein","Schiefer"],acid:7,body:7,fruit:9,tannin:7,alc:12.5},
-  "Riesling": {ideal:["Schiefer","Kalkstein","Kalk-Lehm"],acid:10,body:4,fruit:8,tannin:1,alc:11.5},
-  "Chardonnay": {ideal:["Kalkstein","Kalk-Lehm","Ton"],acid:7,body:8,fruit:7,tannin:2,alc:13},
-  "Silvaner": {ideal:["Kalk-Lehm","Ton","Kies"],acid:7,body:6,fruit:6,tannin:2,alc:12}
-};
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-const rnd=(a,b)=>Math.round(a+Math.random()*(b-a));
-const clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n));
-const eur=n=>Math.round(n).toLocaleString("de-DE")+" €";
+const seasons=["Frühjahr","Sommer","Spätsommer","Herbst / Ernte","Winter"];
+const soilData={
+"Kalk-Lehm":{acid:7,body:7,fruit:5,tannin:6,desc:"ausgeglichen, mineralisch, guter Allrounder"},
+"sandiger Lehm":{acid:5,body:4,fruit:8,tannin:3,desc:"warm und locker, früh reifend, fruchtbetont"},
+"Ton":{acid:4,body:9,fruit:4,tannin:8,desc:"speichert Wasser, kräftige und strukturierte Weine"},
+"Schiefer":{acid:9,body:5,fruit:7,tannin:4,desc:"wärmt schnell auf, hohe Spannung und Mineralität"},
+"Kies":{acid:5,body:6,fruit:9,tannin:5,desc:"sehr warm, trocken, aromatisch – aber wasserhungrig"},
+"Kalkstein":{acid:10,body:6,fruit:6,tannin:6,desc:"frische Säure, feine Struktur und lange Entwicklung"}};
+const varieties={
+"Spätburgunder":{ideal:["Kalk-Lehm","Kalkstein","Schiefer"],acid:7,body:7,fruit:9,tannin:7,alc:12.5},
+"Riesling":{ideal:["Schiefer","Kalkstein","Kalk-Lehm"],acid:10,body:4,fruit:8,tannin:1,alc:11.5},
+"Chardonnay":{ideal:["Kalkstein","Kalk-Lehm","Ton"],acid:7,body:8,fruit:7,tannin:2,alc:13},
+"Silvaner":{ideal:["Kalk-Lehm","Ton","Kies"],acid:7,body:6,fruit:6,tannin:2,alc:12}};
+const $=id=>document.getElementById(id), pick=a=>a[Math.floor(Math.random()*a.length)], rnd=(a,b)=>Math.round(a+Math.random()*(b-a)), clamp=(n,a=0,b=100)=>Math.max(a,Math.min(b,n)), eur=n=>Math.round(n).toLocaleString("de-DE")+" €";
 
-let state = {
-  money:1000, year:1, season:0, wines:[], harvested:false,
-  area:0.72, soil:"Kalk-Lehm", slope:"Südhang",
-  sun:70, water:60, frost:30, disease:25, care:55,
-  cellar:32, press:18, tractor:24, tools:41,
-  probeKnown:false, grapeHealth:70
-};
-
-const $ = id => document.getElementById(id);
+let state={money:1000,year:1,season:0,wines:[],harvested:false,area:.72,soil:"Kalk-Lehm",slope:"Südhang",sun:70,water:60,frost:30,disease:25,care:55,grapeHealth:70,cellar:32,press:18,tractor:24,tools:41,pruningDone:false,story:1,task:null};
 
 function randomVineyard(){
-  state.area = +(0.5 + Math.random()*0.5).toFixed(2);
-  state.soil = pick(Object.keys(soilData));
-  state.slope = pick(["flache Lage","sanfter Südhang","Südhang","Südwesthang","steiler Südosthang"]);
-  state.sun = clamp(rnd(45,96) + (state.slope.includes("Süd")?rnd(2,8):0));
-  state.water = clamp(rnd(38,88) + (state.soil==="Ton"?8:0) - (state.soil==="Kies"?12:0));
-  state.frost = clamp(rnd(10,68) + (state.slope==="flache Lage"?10:0));
-  state.disease = clamp(rnd(12,58) + (state.water>75?8:0));
-  state.care = rnd(45,70);
-  state.grapeHealth = rnd(65,85);
-  state.probeKnown=false;
+state.area=+(0.5+Math.random()*.5).toFixed(2);state.soil=pick(Object.keys(soilData));state.slope=pick(["flache Lage","sanfter Südhang","Südhang","Südwesthang","steiler Südosthang"]);
+state.sun=clamp(rnd(45,96)+(state.slope.includes("Süd")?rnd(2,8):0));state.water=clamp(rnd(38,88)+(state.soil==="Ton"?8:0)-(state.soil==="Kies"?12:0));
+state.frost=clamp(rnd(10,68)+(state.slope==="flache Lage"?10:0));state.disease=clamp(rnd(12,58)+(state.water>75?8:0));state.care=rnd(45,70);state.grapeHealth=rnd(65,85);
+state.pruningDone=false;state.harvested=false;
 }
-
-function terroirFit(){
-  const s=soilData[state.soil], v=varieties[$("varietySelect").value] || varieties["Spätburgunder"];
-  let fit=55;
-  if(v.ideal.includes(state.soil)) fit+=18;
-  fit += (state.sun-60)*0.18 + (state.water-60)*0.10 - state.frost*0.08 - state.disease*0.12;
-  fit += state.care*0.10;
-  return clamp(Math.round(fit));
-}
-function vineyardPotential(){
-  return clamp(Math.round(state.sun*.25 + state.water*.12 + (100-state.frost)*.15 + (100-state.disease)*.15 + state.care*.13 + terroirFit()*.20));
-}
-
-function startNewGame(){
-  state.money=1000;state.year=1;state.season=0;state.wines=[];state.harvested=false;
-  state.cellar=32;state.press=18;state.tractor=24;state.tools=41;
-  randomVineyard();
-  logMsg("Du hast Dieters altes Weingut geerbt. 1.000 € Startkapital – und jede Menge Arbeit.");
-  logMsg("Walter: „Dieter hätte erst den Weinberg angeschaut und dann den Keller.“");
-  drawField(); render();
-}
+function terroirFit(){let s=soilData[state.soil],v=varieties[$("varietySelect").value]||varieties["Spätburgunder"],fit=55;if(v.ideal.includes(state.soil))fit+=18;fit+=(state.sun-60)*.18+(state.water-60)*.1-state.frost*.08-state.disease*.12+state.care*.1;return clamp(Math.round(fit))}
+function vineyardPotential(){return clamp(Math.round(state.sun*.25+state.water*.12+(100-state.frost)*.15+(100-state.disease)*.15+state.care*.13+terroirFit()*.2))}
 
 function render(){
-  $("moneyLabel").textContent=eur(state.money);
-  $("yearLabel").textContent=`Jahr ${state.year} · ${seasons[state.season]}`;
-  $("areaVal").textContent=state.area+" ha";
-  $("soilVal").textContent=state.soil;
-  $("slopeVal").textContent=state.slope;
-  $("potentialVal").textContent=vineyardPotential()+"/100";
-  ["sun","water","frost","disease"].forEach(k=>{
-    $(k+"Val").textContent=state[k]+"/100";
-    $(k+"Bar").style.width=state[k]+"%";
-  });
-  const tf=terroirFit();
-  $("terroirVal").textContent=tf+"/100";
-  $("terroirBar").style.width=tf+"%";
-  $("careState").innerHTML=`<b>${state.care}/100</b> · Reben vital: <b>${state.grapeHealth}/100</b>`;
-  $("seasonText").textContent=[
-    "Die Reben treiben aus. Spätfröste können junge Triebe schädigen.",
-    "Die Reben wachsen stark. Krankheitsdruck und Wasserhaushalt werden wichtig.",
-    "Die Trauben reifen. Jetzt zählt das Zusammenspiel aus Sonne, Wasser und Gesundheit.",
-    "Erntezeit! Der Zeitpunkt entscheidet über Stil, Reife und Jahrgang.",
-    "Winterruhe. Zeit für Reparaturen, Planung und Rebschnitt."
-  ][state.season];
-
-  $("seasonBar").innerHTML=seasons.map((s,i)=>`<div class="seasondot ${i===state.season?"on":""}" title="${s}"></div>`).join("");
-  $("cellarCond").textContent=state.cellar+"/100";
-  $("pressCond").textContent=state.press+"/100";
-  $("tractorCond").textContent=state.tractor+"/100";
-  $("toolCond").textContent=state.tools+"/100";
-
-  const select=$("varietySelect");
-  if(!select.options.length){
-    Object.keys(varieties).forEach(v=>select.add(new Option(v,v)));
-    select.value="Spätburgunder";
-  }
-  renderWines(); renderGoals();
+$("moneyLabel").textContent=eur(state.money);$("yearLabel").textContent=`Jahr ${state.year} · ${seasons[state.season]}`;
+$("areaVal").textContent=state.area+" ha";$("soilVal").textContent=state.soil;$("slopeVal").textContent=state.slope;$("potentialVal").textContent=vineyardPotential()+"/100";
+["sun","water","frost","disease"].forEach(k=>{$(k+"Val").textContent=state[k]+"/100";$(k+"Bar").style.width=state[k]+"%"});
+$("terroirVal").textContent=terroirFit()+"/100";$("terroirBar").style.width=terroirFit()+"%";
+$("careState").innerHTML=`Pflege ${state.care}/100 · Reben ${state.grapeHealth}/100 · Rebschnitt ${state.pruningDone?"erledigt":"offen"}`;
+$("seasonText").textContent=[
+"Die Reben treiben aus. Der Rebschnitt sollte erledigt sein; Spätfröste können junge Triebe schädigen.",
+"Die Reben wachsen stark. Pflege und Krankheitsdruck werden wichtig.",
+"Die Trauben reifen. Jetzt zählt das Zusammenspiel aus Sonne, Wasser und Gesundheit.",
+"Erntezeit! Du musst die Trauben tatsächlich lesen – nicht nur einen Button drücken.",
+"Winterruhe. Reparaturen, Planung und Rebschnitt warten."
+][state.season];
+$("seasonBar").innerHTML=seasons.map((s,i)=>`<div style="flex:1;height:7px;border-radius:8px;background:${i===state.season?"#c89c5b":"#433629"}"></div>`).join("");
+$("cellarCond").textContent=state.cellar+"/100";$("pressCond").textContent=state.press+"/100";$("tractorCond").textContent=state.tractor+"/100";$("toolCond").textContent=state.tools+"/100";
+renderWines();renderGoals();renderStory();
 }
-
 function drawField(){
-  const field=$("field");
-  field.querySelectorAll(".rowline,.vine,.leaf,.grape").forEach(x=>x.remove());
-  for(let i=0;i<16;i++){
-    const row=document.createElement("div");row.className="rowline";row.style.top=(8+i*5.2)+"%";field.appendChild(row);
-    for(let j=0;j<15;j++){
-      const x=8+j*6+(Math.random()-.5),y=8+i*5.2+(Math.random()-.5)*2;
-      const vine=document.createElement("div");vine.className="vine";vine.style.left=x+"%";vine.style.top=y+"%";field.appendChild(vine);
-      for(let k=0;k<2;k++){const leaf=document.createElement("div");leaf.className="leaf";leaf.style.left=(x+(k?2:-2))+"%";leaf.style.top=(y-3-Math.random()*2)+"%";field.appendChild(leaf);}
-      if(Math.random()<.68){const grape=document.createElement("div");grape.className="grape";grape.style.left=x+"%";grape.style.top=(y+2)+"%";field.appendChild(grape);}
-    }
-  }
-}
-
+const field=$("field");field.querySelectorAll(".rowline,.vine,.leaf,.grape,.task-target").forEach(x=>x.remove());
+for(let i=0;i<16;i++){let row=document.createElement("div");row.className="rowline";row.style.top=(8+i*5.2)+"%";field.appendChild(row);
+for(let j=0;j<15;j++){let x=8+j*6+(Math.random()-.5),y=8+i*5.2+(Math.random()-.5)*2;
+let vine=document.createElement("div");vine.className="vine";vine.style.left=x+"%";vine.style.top=y+"%";field.appendChild(vine);
+for(let k=0;k<2;k++){let leaf=document.createElement("div");leaf.className="leaf";leaf.style.left=(x+(k?2:-2))+"%";leaf.style.top=(y-3-Math.random()*2)+"%";field.appendChild(leaf)}
+if(Math.random()<.68){let g=document.createElement("div");g.className="grape";g.style.left=x+"%";g.style.top=(y+2)+"%";g.dataset.grape="1";field.appendChild(g)}
+}}}
 let px=50,py=82,dragging=false;
-function placePlayer(){$("player").style.left=px+"%";$("player").style.top=py+"%";}
-function movePlayer(e){
-  const z=$("field").getBoundingClientRect();
-  px=Math.max(3,Math.min(97,(e.clientX-z.left)/z.width*100));
-  py=Math.max(3,Math.min(97,(e.clientY-z.top)/z.height*100));
-  placePlayer();
-}
-$("field").addEventListener("pointerdown",e=>{dragging=true;$("field").setPointerCapture(e.pointerId);movePlayer(e)});
-$("field").addEventListener("pointermove",e=>{if(dragging)movePlayer(e)});
-$("field").addEventListener("pointerup",()=>dragging=false);
-$("field").addEventListener("pointercancel",()=>dragging=false);
+function placePlayer(){$("player").style.left=px+"%";$("player").style.top=py+"%"}
+function movePlayer(e){let z=$("field").getBoundingClientRect();px=Math.max(3,Math.min(97,(e.clientX-z.left)/z.width*100));py=Math.max(3,Math.min(97,(e.clientY-z.top)/z.height*100));placePlayer()}
+$("field").addEventListener("pointerdown",e=>{dragging=true;$("field").setPointerCapture(e.pointerId);movePlayer(e)});$("field").addEventListener("pointermove",e=>{if(dragging)movePlayer(e)});$("field").addEventListener("pointerup",()=>dragging=false);
 
-function spend(cost,reason){
-  if(state.money<cost){logMsg(`Es fehlen ${eur(cost-state.money)} für ${reason}.`);return false;}
-  state.money-=cost;return true;
+function startTask(type){
+if(state.task){logMsg("Beende erst die aktuelle Arbeit.");return}
+if(type==="pruning" && state.season!==0 && state.season!==4){logMsg("Der Rebschnitt gehört in die Winterruhe bzw. ins Frühjahr.");return}
+if(type==="harvest" && state.season!==3){logMsg("Walter: „Für die Ernte ist es noch nicht soweit.“");return}
+if(type==="irrigate" && state.money<30){logMsg("Für die Bewässerung fehlen dir 30 €.");return}
+if(type==="protect" && state.money<45){logMsg("Für den Pflanzenschutz fehlen dir 45 €.");return}
+if(type==="care" && state.money<20){logMsg("Für die Pflege fehlen dir 20 €.");return}
+if(type==="pruning" && state.money<10){logMsg("Für Schere, Bindematerial und Kleinkram fehlen dir 10 €.");return}
+if(type==="harvest" && state.press<15){logMsg("Die alte Presse ist zu schwach. Repariere sie zuerst.");return}
+const data={pruning:["✂️ Rebschnitt","Schneide 10 markierte Rebstellen. Jeder Treffer zählt.","pruning",10],care:["🌿 Rebenpflege","Kümmere dich um 8 markierte Stellen im Weinberg.","care",8],protect:["🛡️ Pflanzenschutz","Kontrolliere 7 Problemstellen und behandle sie.","protect",7],harvest:["🍇 Weinlese","Lies 18 Trauben per Fingertipp. Nur gesunde Trauben zählen.","harvest",18],irrigate:["💧 Bewässerung","Aktiviere 6 Bewässerungspunkte.","irrigate",6]}[type];
+state.task={type,done:0,need:data[3]};$("taskPanel").style.display="block";$("taskTitle").textContent=data[0];$("taskHint").textContent=data[1];$("taskCount").textContent=`0 / ${data[3]}`;$("taskProgress").style.width="0%";
+spawnTargets(type,data[3]);
+logMsg(`${data[0]} begonnen. Jetzt musst du wirklich ran.`);
 }
-function probeSoil(){
-  if(!spend(35,"die Bodenprobe"))return;
-  state.probeKnown=true;
-  const s=soilData[state.soil];
-  logMsg(`Bodenprobe: ${state.soil}. ${s.desc}. Terroir-Fit mit ${$("varietySelect").value}: ${terroirFit()}/100.`);
-  render();
+function spawnTargets(type,n){
+const field=$("field");field.querySelectorAll(".task-target").forEach(x=>x.remove());
+let pool=Array.from(field.querySelectorAll(".grape"));pool.sort(()=>Math.random()-.5);
+for(let i=0;i<n;i++){let el=document.createElement("button");el.className="task-target";el.textContent=type==="harvest"?"🍇":type==="pruning"?"✂️":type==="care"?"🌿":type==="protect"?"🛡️":"💧";
+el.style.left=(7+Math.random()*86)+"%";el.style.top=(10+Math.random()*78)+"%";el.dataset.target="1";field.appendChild(el)}
 }
-function careVines(){
-  if(!spend(20,"die Rebenpflege"))return;
-  state.care=clamp(state.care+9);state.grapeHealth=clamp(state.grapeHealth+6);state.disease=clamp(state.disease-4);
-  logMsg("Du pflegst die Reben. Der Bestand wirkt vitaler.");
-  render();
+$("field").addEventListener("click",e=>{
+if(!state.task)return;
+let t=e.target.closest(".task-target");if(!t)return;
+t.remove();state.task.done++;$("taskCount").textContent=`${state.task.done} / ${state.task.need}`;$("taskProgress").style.width=(state.task.done/state.task.need*100)+"%";
+if(state.task.done>=state.task.need){$("finishTaskBtn").disabled=false;$("taskHint").textContent="Alles erledigt. Jetzt Arbeit abschließen."}
+});
+function finishTask(){
+if(!state.task || state.task.done<state.task.need){logMsg("Noch nicht fertig – einige markierte Stellen fehlen.");return}
+let t=state.task.type;
+if(t==="pruning"){state.money-=10;state.pruningDone=true;state.care=clamp(state.care+10);state.grapeHealth=clamp(state.grapeHealth+5);logMsg("✂️ Rebschnitt erledigt. Die Reben sind sauber aufgebaut.")}
+if(t==="care"){state.money-=20;state.care=clamp(state.care+14);state.grapeHealth=clamp(state.grapeHealth+8);state.disease=clamp(state.disease-5);logMsg("🌿 Pflege abgeschlossen. Du hast jede markierte Stelle selbst bearbeitet.")}
+if(t==="protect"){state.money-=45;state.disease=clamp(state.disease-20);state.grapeHealth=clamp(state.grapeHealth+3);logMsg("🛡️ Pflanzenschutz abgeschlossen. Krankheitsdruck sinkt deutlich.")}
+if(t==="irrigate"){state.money-=30;state.water=clamp(state.water+18);state.grapeHealth=clamp(state.grapeHealth+4);logMsg("💧 Bewässerung abgeschlossen. Wasser kommt gezielt an die Reben.")}
+if(t==="harvest"){harvestWine();return}
+cancelTask();render();
 }
-function protectVines(){
-  if(!spend(45,"den Pflanzenschutz"))return;
-  state.disease=clamp(state.disease-18);state.care=clamp(state.care+3);
-  logMsg("Pflanzenschutz reduziert den Krankheitsdruck. Keine Garantie gegen den Jahrgang – aber eine gute Absicherung.");
-  render();
-}
-function irrigate(){
-  if(!spend(30,"die Bewässerung"))return;
-  state.water=clamp(state.water+16);state.grapeHealth=clamp(state.grapeHealth+3);
-  logMsg("Du bewässerst gezielt. Der Wasserhaushalt verbessert sich.");
-  render();
-}
+function cancelTask(){state.task=null;$("taskPanel").style.display="none";$("field").querySelectorAll(".task-target").forEach(x=>x.remove())}
+
 function nextSeason(){
-  // Jahreszeitliche Risiken
-  if(state.season===0 && Math.random()<0.28){
-    const hit=rnd(5,16);state.grapeHealth=clamp(state.grapeHealth-hit);state.frost=clamp(state.frost+6);
-    logMsg(`❄️ Spätfrost! Junge Triebe wurden geschädigt (-${hit} Vitalität).`);
-  }
-  if(state.season===1 || state.season===2){
-    const delta=rnd(-4,9);state.disease=clamp(state.disease+delta);
-    if(Math.random()<0.18){const hit=rnd(4,12);state.grapeHealth=clamp(state.grapeHealth-hit);logMsg(`🦠 Krankheitsdruck steigt. Ein Teil der Trauben leidet (-${hit} Vitalität).`);}
-  }
-  if(state.season===2){
-    state.sun=clamp(state.sun+rnd(-3,5));state.water=clamp(state.water+rnd(-10,4));
-    logMsg("Die Trauben reifen. Sonne und Wasser verschieben den Charakter des Jahrgangs.");
-  }
-  state.season++;
-  if(state.season>=5){
-    state.season=0;state.year++;state.harvested=false;
-    state.frost=clamp(rnd(10,70));state.disease=clamp(state.disease+rnd(-8,10));
-    state.grapeHealth=clamp(state.grapeHealth+rnd(-5,6));
-    logMsg(`🌱 Jahr ${state.year} beginnt. Ein neuer Jahrgang steht vor der Tür.`);
-  } else logMsg(`Die Zeit vergeht: ${seasons[state.season]}.`);
-  render();
+if(state.season===0&&!state.pruningDone){state.grapeHealth=clamp(state.grapeHealth-10);logMsg("⚠️ Du hast den Rebschnitt verpasst. Der Bestand startet schlechter ins Jahr.")}
+if(state.season===0&&Math.random()<.28){let hit=rnd(5,16);state.grapeHealth=clamp(state.grapeHealth-hit);logMsg(`❄️ Spätfrost! -${hit} Rebenvitalität.`)}
+if(state.season===1||state.season===2){state.disease=clamp(state.disease+rnd(-4,9));if(Math.random()<.18){let hit=rnd(4,12);state.grapeHealth=clamp(state.grapeHealth-hit);logMsg(`🦠 Krankheitsdruck. -${hit} Vitalität.`)}}
+if(state.season===2){state.sun=clamp(state.sun+rnd(-3,5));state.water=clamp(state.water+rnd(-10,4));logMsg("☀️ Die Trauben reifen – Sonne und Wasser verändern den Jahrgang.")}
+state.season++;
+if(state.season>=5){state.season=0;state.year++;state.harvested=false;state.pruningDone=false;state.frost=clamp(rnd(10,70));state.disease=clamp(state.disease+rnd(-8,10));logMsg(`🌱 Jahr ${state.year} beginnt.`)}
+else logMsg(`📅 ${seasons[state.season]}.`);
+render();
 }
-function harvestGrapes(){
-  if(state.season!==3){logMsg("Walter: „Noch nicht. Erst wenn die Trauben wirklich reif sind.“");return;}
-  if(state.harvested){logMsg("Die Ernte dieses Jahr ist bereits eingefahren.");return;}
-  state.harvested=true;
-  const variety=$("varietySelect").value,v=varieties[variety],s=soilData[state.soil];
-  const maturity=clamp(Math.round(55+state.sun*.28+state.water*.08-state.disease*.16+state.grapeHealth*.18+rnd(-8,8)));
-  const fit=terroirFit();
-  const q=clamp(Math.round(vineyardPotential()*.48+maturity*.25+fit*.17+state.press*.05+state.grapeHealth*.05+rnd(-7,7)));
-  const acid=clamp(Math.round(v.acid+s.acid*.8+(state.water>72?2:0)+(state.sun<60?3:0)+rnd(-4,4)));
-  const body=clamp(Math.round(v.body+s.body*.6+state.sun*.08+state.water*.04+rnd(-5,5)));
-  const fruit=clamp(Math.round(v.fruit+s.fruit*.7+state.sun*.09-state.disease*.05+rnd(-5,5)));
-  const tannin=clamp(Math.round(v.tannin+s.tannin*.6+state.sun*.05+rnd(-4,4)));
-  const alc=(v.alc + (maturity-70)*0.025).toFixed(1);
-  const aroma=clamp(Math.round((fruit+acid+fit)/3+rnd(-4,4)));
-  const aging=clamp(Math.round((body+tannin+acid+q)/4+rnd(-5,5)));
-  const wine={year:state.year,variety,q,acid,body,fruit,tannin,alc,aroma,aging,maturity,age:0,sold:false};
-  state.wines.unshift(wine);
-  logMsg(`🍇 Ernte eingebracht: ${variety}. Traubenqualität ${q}/100, Reife ${maturity}/100.`);
-  logMsg(`🍷 Neuer Wein im Keller: Säure ${acid}, Körper ${body}, Frucht ${fruit}, Tannin ${tannin}.`);
-  render();
+function harvestWine(){
+state.harvested=true;state.money+=0;state.task=null;$("taskPanel").style.display="none";
+const variety=$("varietySelect").value,v=varieties[variety],s=soilData[state.soil];
+const maturity=clamp(Math.round(55+state.sun*.28+state.water*.08-state.disease*.16+state.grapeHealth*.18+rnd(-8,8)));
+const fit=terroirFit(),q=clamp(Math.round(vineyardPotential()*.48+maturity*.25+fit*.17+state.press*.05+state.grapeHealth*.05+rnd(-7,7)));
+const acid=clamp(Math.round(v.acid+s.acid*.8+(state.water>72?2:0)+(state.sun<60?3:0)+rnd(-4,4)));
+const body=clamp(Math.round(v.body+s.body*.6+state.sun*.08+state.water*.04+rnd(-5,5)));
+const fruit=clamp(Math.round(v.fruit+s.fruit*.7+state.sun*.09-state.disease*.05+rnd(-5,5)));
+const tannin=clamp(Math.round(v.tannin+s.tannin*.6+state.sun*.05+rnd(-4,4)));const alc=(v.alc+(maturity-70)*.025).toFixed(1);
+const aroma=clamp(Math.round((fruit+acid+fit)/3+rnd(-4,4))),aging=clamp(Math.round((body+tannin+acid+q)/4+rnd(-5,5)));
+state.wines.unshift({year:state.year,variety,q,acid,body,fruit,tannin,alc,aroma,aging,maturity,age:0,sold:false});
+logMsg(`🍷 Erste echte Lese abgeschlossen: ${variety} ${state.year}. ${q}/100.`);
+if(q>=90)state.story=Math.max(state.story,2);
+render();
 }
-function ageWine(index){
-  const w=state.wines[index];
-  if(!w || w.sold)return;
-  w.age++;
-  w.acid=clamp(w.acid-1);w.tannin=clamp(w.tannin-1);
-  w.aroma=clamp(w.aroma+2);w.body=clamp(w.body+1);w.q=clamp(w.q+(w.age<=w.aging/20?1:0));
-  logMsg(`🍷 ${w.variety} ${w.year} reift weiter. Aroma +2, Körper +1.`);
-  render();
+function startWalterJob(){
+if(state.task){logMsg("Beende erst die aktuelle Arbeit.");return}
+const gain=rnd(80,160);state.task={type:"walter",done:0,need:6,wage:gain};
+$("taskPanel").style.display="block";$("taskTitle").textContent="🤝 Arbeit bei Walter";$("taskHint").textContent="Walter hat 6 Aufgaben auf seinem Hof für dich. Tippe die markierten Stellen an.";spawnTargets("walter",6);$("taskCount").textContent="0 / 6";$("taskProgress").style.width="0%";$("finishTaskBtn").disabled=false;
+logMsg("Walter: „Wenn du mir heute hilfst, kann ich dir etwas aus der Kasse geben.“");
 }
-function sellWine(index){
-  const w=state.wines[index];
-  if(!w || w.sold)return;
-  const price=Math.max(35,Math.round(20+w.q*1.55+w.aroma*.45+w.age*8));
-  state.money+=price;w.sold=true;
-  logMsg(`💰 ${w.variety} ${w.year} verkauft für ${eur(price)}.`);
-  render();
-}
-function renderWines(){
-  const box=$("winesList");
-  if(!state.wines.length){box.innerHTML='<div class="notice">Noch kein Wein im Keller. Erst ernten, dann wird es interessant. 🍇</div>';return;}
-  box.innerHTML=state.wines.map((w,i)=>{
-    const status=w.sold?'<span class="bad">verkauft</span>':`Reife ${w.age} Winter`;
-    return `<div class="wine">
-      <div class="wine-title"><div><b>${w.variety} · Jahrgang ${w.year}</b><div class="small">${status}</div></div><div class="score">${w.q}/100</div></div>
-      <div class="winegrid">
-        <div class="wine-stat"><small>Säure</small><b>${w.acid}</b></div>
-        <div class="wine-stat"><small>Körper</small><b>${w.body}</b></div>
-        <div class="wine-stat"><small>Frucht</small><b>${w.fruit}</b></div>
-        <div class="wine-stat"><small>Aroma</small><b>${w.aroma}</b></div>
-        <div class="wine-stat"><small>Tannin</small><b>${w.tannin}</b></div>
-        <div class="wine-stat"><small>Alkohol</small><b>${w.alc}%</b></div>
-        <div class="wine-stat"><small>Reife</small><b>${w.maturity}</b></div>
-        <div class="wine-stat"><small>Lagerpotenzial</small><b>${w.aging}</b></div>
-      </div>
-      ${w.sold?'':'<div class="actions"><button onclick="ageWine('+i+')">🕰️ Ein Winter Reife</button><button class="primary" onclick="sellWine('+i+')">💶 Verkaufen</button></div>'}
-    </div>`;
-  }).join("");
-}
-function walterJob(){
-  const gain=rnd(80,160);state.money+=gain;
-  logMsg(`Walter gibt dir Lohnarbeit. Du verdienst ${eur(gain)}.`);
-  render();
+const oldFinish=finishTask;
+finishTask=function(){
+if(state.task&&state.task.type==="walter"){
+if(state.task.done<6){logMsg("Walter: „Da fehlen noch ein paar Sachen.“");return}
+state.money+=state.task.wage;state.story=Math.max(state.story,3);logMsg(`💶 Walter zahlt dir ${eur(state.task.wage)} Lohn.`);cancelTask();render();return}
+oldFinish();
 }
 function walterTip(){
-  const v=$("varietySelect").value;
-  const tips=[
-    `„Bei ${state.soil} würde ich ${v} nicht blind pflanzen. Erst anschauen, was der Standort wirklich kann.“`,
-    "„Ein guter Jahrgang ist selten nur Glück. Man muss im Frühjahr, Sommer und Herbst die richtigen kleinen Entscheidungen treffen.“",
-    "„Dieter hat immer gesagt: Lieber weniger Trauben und dafür gesunde Trauben.“",
-    `„Dein ${state.slope} gefällt mir. Aber bei Frost würde ich die tiefen Stellen im Auge behalten.“`
-  ];
-  $("walterText").textContent=pick(tips);
-  logMsg("Walter erzählt dir einen alten Rat von Dieter.");
+const v=$("varietySelect").value,tips=[`„Bei ${state.soil} würde ich ${v} genau beobachten. Der Boden ist nie nur Deko.“`,`„Dieter hat immer gesagt: Lieber gesunde Trauben als Rekordmengen.“`,`„Wenn du später gute Weine machen willst, musst du im Weinberg anfangen.“`,`„Du arbeitest inzwischen anders als Dieter. Aber vielleicht hätte er genau das gewollt.“`];
+$("walterText").textContent=pick(tips);logMsg("Walter erzählt dir etwas aus seiner Erfahrung.");state.story=Math.max(state.story,1);render();
 }
-function repairItem(key,cost){
-  if(!spend(cost,"die Reparatur"))return;
-  state[key]=clamp(state[key]+28);
-  const names={cellar:"Keller",press:"Presse",tractor:"Schlepper",tools:"Werkzeug"};
-  logMsg(`🔧 ${names[key]} repariert. Zustand +28.`);
-  render();
-}
-function renderGoals(){
-  const goals=[];
-  if(state.wines.length===0)goals.push("🍇 Ernte deinen ersten Jahrgang.");
-  else goals.push("✅ Erster Jahrgang eingefahren.");
-  if(state.wines.some(w=>w.q>=90))goals.push("🏆 Einen Jahrgang mit mindestens 90/100 erzeugen.");
-  else goals.push("🎯 Erzeuge einen Wein mit mindestens 90/100.");
-  if(state.wines.some(w=>w.sold))goals.push("💶 Den ersten Wein verkaufen.");
-  else goals.push("💶 Deinen ersten Wein verkaufen.");
-  if(state.probeKnown)goals.push("🔎 Terroir untersucht.");
-  else goals.push("🔎 Herausfinden, was im Boden steckt.");
-  $("goals").innerHTML=goals.map(x=>"• "+x).join("<br>");
-}
-function logMsg(text){
-  $("log").insertAdjacentHTML("afterbegin",`<div>• ${text}</div>`);
-}
-function showTab(which){
-  $("viewV").style.display=which==="v"?"block":"none";
-  $("viewK").style.display=which==="k"?"block":"none";
-  $("viewW").style.display=which==="w"?"block":"none";
-  ["tabV","tabK","tabW"].forEach(id=>$(id).classList.remove("active"));
-  $(which==="v"?"tabV":which==="k"?"tabK":"tabW").classList.add("active");
-}
-$("varietySelect").addEventListener("change",()=>render());
-
-startNewGame();
-placePlayer();
+function ageWine(i){let w=state.wines[i];if(!w||w.sold)return;w.age++;w.acid=clamp(w.acid-1);w.tannin=clamp(w.tannin-1);w.aroma=clamp(w.aroma+2);w.body=clamp(w.body+1);w.q=clamp(w.q+(w.age<=w.aging/20?1:0));logMsg(`🍷 ${w.variety} ${w.year} reift weiter.`);render()}
+function sellWine(i){let w=state.wines[i];if(!w||w.sold)return;let price=Math.max(35,Math.round(20+w.q*1.55+w.aroma*.45+w.age*8));state.money+=price;w.sold=true;logMsg(`💰 ${w.variety} ${w.year} verkauft für ${eur(price)}.`);render()}
+function renderWines(){let box=$("winesList");if(!state.wines.length){box.innerHTML='<div class="notice">Noch kein Wein im Keller. Erst den Weinberg bearbeiten. 🍇</div>';return}box.innerHTML=state.wines.map((w,i)=>`<div class="wine"><div class="wine-title"><div><b>${w.variety} · Jahrgang ${w.year}</b><div class="small">${w.sold?"verkauft":`Reife ${w.age} Winter`}</div></div><div class="score">${w.q}/100</div></div><div class="winegrid"><div class="wine-stat"><small>Säure</small><b>${w.acid}</b></div><div class="wine-stat"><small>Körper</small><b>${w.body}</b></div><div class="wine-stat"><small>Frucht</small><b>${w.fruit}</b></div><div class="wine-stat"><small>Aroma</small><b>${w.aroma}</b></div><div class="wine-stat"><small>Tannin</small><b>${w.tannin}</b></div><div class="wine-stat"><small>Alkohol</small><b>${w.alc}%</b></div><div class="wine-stat"><small>Reife</small><b>${w.maturity}</b></div><div class="wine-stat"><small>Lagerpotenzial</small><b>${w.aging}</b></div></div>${w.sold?"":`<div class="actions"><button onclick="ageWine(${i})">🕰️ Ein Winter</button><button class="primary" onclick="sellWine(${i})">💶 Verkaufen</button></div>`}</div>`).join("")}
+function repairItem(k,c){if(state.money<c){logMsg(`Für die Reparatur fehlen ${eur(c-state.money)}.`);return}state.money-=c;state[k]=clamp(state[k]+28);logMsg(`🔧 ${k==="cellar"?"Keller":k==="press"?"Presse":k==="tractor"?"Schlepper":"Werkzeug"} repariert.`);render()}
+function renderGoals(){let a=[];if(!state.pruningDone)a.push("✂️ Rebschnitt praktisch erledigen.");else a.push("✅ Rebschnitt erledigt.");if(!state.wines.length)a.push("🍇 Einen echten Jahrgang ernten.");else a.push("✅ Wein im Keller.");if(state.wines.some(w=>w.q>=90))a.push("🏆 90+ Wein erreicht.");else a.push("🎯 Einen Wein mit 90+ erzeugen.");if(state.wines.some(w=>w.sold))a.push("💶 Wein verkauft.");else a.push("💶 Ersten Wein verkaufen.");$("goals").innerHTML=a.map(x=>"• "+x).join("<br>")}
+const stories=[
+["Kapitel 1 – Zwei Familien","Walter war sieben, als er Dieter zum ersten Mal begegnete. Dieter war bereits 28 und hatte sich nach dem Krieg und den Jahren voller Veränderungen in dieser Gegend ein kleines Leben aufgebaut. Walter erinnert sich an den ersten Eindruck: Dieter sprach wenig, aber er kannte jeden Weg, jede Mauer und jede Rebe.","„Dein Großvater war damals schon stur. Aber auf eine gute Art.“"],
+["Kapitel 2 – Dieters Weinberg","Walter erzählt dir, dass Dieters Familie irgendwann nach Amerika auswanderte. Dieter blieb. Er hatte hier seine Frau, seinen Weinberg und später Walter, der fast wie ein Teil der Familie wurde. Walter kennt noch viele Geschichten über die alten Parzellen.","„Er sagte immer: Ein Weinberg gehört dir nie wirklich. Du passt nur eine Weile auf ihn auf.“"],
+["Kapitel 3 – Was Dieter dir hinterlassen hat","Nach deiner ersten richtigen Arbeit im Weinberg beginnt Walter offener über Dieter zu sprechen. Er verrät dir, dass Dieter manche Dinge absichtlich nie aufgeschrieben hat. Nicht aus Geheimniskrämerei – er wollte, dass der nächste Winzer selbst lernt, hinzuschauen.","„Vielleicht war das sein letzter Unterricht.“"],
+["Kapitel 4 – Der erste gemeinsame Jahrgang","Nach deinem ersten Wein merkt Walter, dass du es ernst meinst. Er erzählt dir von einem Jahr, in dem Dieter und Walter gemeinsam bis tief in die Nacht gelesen haben. Eine Ernte, die beide nie vergessen haben.","„Der Wein war nicht perfekt. Aber wir waren stolz wie die Könige.“"]];
+function renderStory(){let n=state.story;$("storyList").innerHTML=stories.slice(0,n+1).map((s,i)=>`<div class="story" style="margin-top:10px"><h3>${s[0]}</h3><div>${s[1]}</div><div class="quote">${s[2]}</div></div>`).join("")}
+function logMsg(t){$("log").insertAdjacentHTML("afterbegin",`<div>• ${t}</div>`)}
+function showTab(w){["V","K","W","S"].forEach(x=>{$("view"+x).style.display=(w===x.toLowerCase())?"block":"none";});}
+$("varietySelect").addEventListener("change",render);
+function init(){Object.keys(varieties).forEach(v=>$("varietySelect").add(new Option(v,v)));$("varietySelect").value="Spätburgunder";randomVineyard();drawField();placePlayer();logMsg("Du hast Dieters altes Weingut geerbt. 1.000 € Startkapital – und jede Menge Arbeit.");logMsg("Walter: „Na, dann wollen wir mal sehen, was aus dem alten Weinberg wird.“");render()}
+init();
 </script>
 </body>
 </html>
