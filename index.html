@@ -25,7 +25,7 @@ button:active{transform:scale(.96)}
 </head>
 <body>
 <div id="hud"><div class="title">🍇 WEINGUT DIETER</div><div class="sub" id="status">Zu Fuß · Frühling · 1.000 €</div></div>
-<div id="mission">Reben gepflegt<br><b id="count">0 / 6</b></div>
+<div id="mission">Reben gepflegt<br><b id="count">0 / 12</b></div>
 <div id="hint"></div>
 <div id="buttons">
 <button id="vehicle">🚜 Traktor</button>
@@ -69,7 +69,7 @@ function vine(x,z,mark=false){
  scene.add(g);return g;
 }
 const workVines=[];
-for(let i=0;i<6;i++)workVines.push(vine(-27+i*9, -3.5, true));
+for(let i=0;i<12;i++){const x=-38+i*6.9; const z=(i%2===0)?-3.5:0; workVines.push(vine(x,z,true));}
 for(let z=-17.5;z<=17.5;z+=3.5)for(let x=-36;x<=36;x+=3.5)if(!(z===-3.5&&x>=-30&&x<=18))vine(x,z,false);
 
 // winery compound: cellar, yard, vineyard connected by broad paths
@@ -89,6 +89,26 @@ for(let i=0;i<7;i++)box([72+Math.random()*25,2,-52+Math.random()*18],[5,4,5],0xb
 box([82,5,-53],[6,10,6],0xd2c4a7);box([82,11,-53],[1.2,6,1.2],0x817466);
 let roof=mesh(new THREE.ConeGeometry(4.3,3.3,4),mat(0x514b43),[82,11.8,-53]);roof.rotation.y=Math.PI/4;
 
+// Betretbare Innenräume: Weingut + Keller
+box([-28,2.2,-17],[17,.25,9],0x6f5b48); // floor
+box([-28,5.5,-21.2],[17,6,.35],0x4d392e);
+box([-36.3,3,-17],[.35,6,9],0x73553d);
+box([-19.7,3,-17],[.35,6,9],0x73553d);
+// Rückwand mit breiter Türöffnung
+box([-28,3,-12.7],[17,6,.35],0x73553d);
+box([-35,3,-21.5],[.35,6,1.8],0x73553d);
+box([-21,3,-21.5],[.35,6,1.8],0x73553d);
+box([-28,5.6,-21.5],[14,1,.35],0x73553d);
+box([-28,0.18,-27],[14,.3,9],0x5a493b); // cellar floor
+box([-35,2.8,-27],[.35,5.6,9],0x49372d);
+box([-21,2.8,-27],[.35,5.6,9],0x49372d);
+box([-28,5.6,-27],[14,.5,9],0x3e3028);
+box([-35,2.8,-31.3],[28,.35,.35],0x49372d);
+box([-21,2.8,-31.3],[28,.35,.35],0x49372d);
+sign('EINGANG',-28, -11.8); sign('KELLER',-28,-31.5);
+
+// cellar barrels
+for(let i=-2;i<=2;i++){cyl([-28+i*2.3,.8,-29.5],.75,1.5,0x6d4b2f);}
 // tractor
 const tractor=new THREE.Group();tractor.position.set(6,.15,8);
 function tb(p,s,c){let o=new THREE.Mesh(new THREE.BoxGeometry(...s),mat(c));o.position.set(...p);o.castShadow=o.receiveShadow=true;tractor.add(o)}
@@ -115,6 +135,8 @@ const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 function distance(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
 function msg(t){let h=document.getElementById('hint');h.textContent=t;h.style.display='block';clearTimeout(h.tm);h.tm=setTimeout(()=>h.style.display='none',1800)}
+let lastZone='';
+function msgOnce(t){if(lastZone!==t){lastZone=t;msg(t)}}
 function vehicleAction(){
  if(!driving && distance(player,tractor)<3){driving=true;player.visible=false;msg('🚜 Eingestiegen – fahre los!')}
  else if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.3;msg('👨‍🌾 Ausgestiegen')}
@@ -160,11 +182,15 @@ function update(dt){
  }
  nearVine=null;let best=999;
  if(!driving)for(const v of workVines){let d=distance(player,v);if(d<best){best=d;nearVine=v}}
+ if(!driving){
+   if(player.position.x<-19 && player.position.z>-23 && player.position.z<-10) msgOnce('🏡 Du bist im Weingut');
+   if(player.position.x<-21 && player.position.z<-23) msgOnce('🍷 Du bist im Keller');
+ }
  nearTractor=!driving&&distance(player,tractor)<3;
  document.getElementById('interact').style.display=(nearTractor||nearVine)?'block':'none';
  document.getElementById('interact').textContent=nearTractor?'🚜 Ein-/Aussteigen':'✂️ Rebe bearbeiten';
  document.getElementById('status').textContent=(driving?'🚜 Traktor · ':'👨‍🌾 Zu Fuß · ')+'Frühling · '+money.toLocaleString('de-DE')+' €';
- document.getElementById('count').textContent=cared+' / 6';
+ document.getElementById('count').textContent=cared+' / '+workVines.length;
 }
 document.getElementById('interact').onclick=()=>nearTractor?vehicleAction():workAction();
 
@@ -179,7 +205,7 @@ let last=performance.now();
 function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;update(dt);cameraUpdate();ui();renderer.render(scene,camera);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-msg('0.7 FIX: frei laufen, Traktor, Arbeitsstellen');
+msg('0.7.1: Alle 12 Reben + betretbares Weingut und Keller');
 </script>
 </body>
 </html>
