@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Weingut Dieter – 0.7 FIX</title>
+<title>Weingut Dieter – 0.7.2 FIX</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#8db6d0;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
 canvas{display:block}
@@ -65,7 +65,7 @@ function vine(x,z,mark=false){
  let g=new THREE.Group();g.position.set(x,0,z);
  let post=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,1.6,8),mat(0x654d38));post.position.y=.8;g.add(post);
  for(let i=-1;i<=1;i++){let l=new THREE.Mesh(new THREE.SphereGeometry(.23,8,6),mat(0x3e7438));l.scale.set(1.8,.45,.7);l.position.set(i*.34,1,0);g.add(l)}
- if(mark){let tor=new THREE.Mesh(new THREE.TorusGeometry(.55,.055,10,32),new THREE.MeshBasicMaterial({color:0xffd21c}));tor.rotation.x=Math.PI/2;tor.position.y=.045;g.add(tor);g.userData.work=true}
+ if(mark){let tor=new THREE.Mesh(new THREE.TorusGeometry(.62,.07,10,32),new THREE.MeshBasicMaterial({color:0xffd21c}));tor.rotation.x=Math.PI/2;tor.position.y=.045;g.add(tor);let flag=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.9,8),new THREE.MeshBasicMaterial({color:0xffd21c}));flag.position.set(0,2.25,0);g.add(flag);let dot=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8),new THREE.MeshBasicMaterial({color:0xff5b20}));dot.position.set(0,2.7,0);g.add(dot);g.userData.work=true}
  scene.add(g);return g;
 }
 const workVines=[];
@@ -124,7 +124,7 @@ let head=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8),mat(0xd3a47d));head.p
 // zones: not walls, just labels/locations
 const signs=[];
 function sign(text,x,z){
- let c=document.createElement('canvas');c.width=512;c.height=128;let ctx=c.getContext('2d');ctx.fillStyle='rgba(25,20,15,.8)';ctx.roundRect(4,4,504,120,18);ctx.fill();ctx.fillStyle='white';ctx.font='bold 38px sans-serif';ctx.textAlign='center';ctx.fillText(text,256,80);
+ let c=document.createElement('canvas');c.width=512;c.height=128;let ctx=c.getContext('2d');ctx.fillStyle='rgba(25,20,15,.8)';ctx.fillRect(4,4,504,120);ctx.fillStyle='white';ctx.font='bold 38px sans-serif';ctx.textAlign='center';ctx.fillText(text,256,80);
  let tex=new THREE.CanvasTexture(c);let sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));sp.scale.set(5,1.25,1);sp.position.set(x,3,z);scene.add(sp);signs.push(sp)
 }
 sign('WEINGUT / KELLER',-28,-9);sign('WEINBERG',8,17);
@@ -205,7 +205,7 @@ let last=performance.now();
 function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;update(dt);cameraUpdate();ui();renderer.render(scene,camera);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-msg('0.7.1: Alle 12 Reben + betretbares Weingut und Keller');
+msg('0.7.2: Welt lädt – 12 Reben + Weingut + Keller');
 </script>
 </body>
 </html>
