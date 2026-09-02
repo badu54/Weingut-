@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Weingut Dieter – 0.7.2 FIX</title>
+<title>Weingut Dieter – 0.7.4 TON</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#8db6d0;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
 canvas{display:block}
@@ -21,6 +21,7 @@ button:active{transform:scale(.96)}
 #steerL{left:0;bottom:0}#steerR{left:70px;bottom:0}#throttle{right:0;bottom:70px}#reverse{right:0;bottom:0}
 #interact{position:fixed;right:18px;top:88px;z-index:25;display:none;background:#d8a52c;color:#18130a}
 #zone{position:fixed;inset:0;pointer-events:none;z-index:10}
+#sound{position:fixed;right:12px;bottom:14px;z-index:40;background:#111c;color:#fff}
 </style>
 </head>
 <body>
@@ -31,6 +32,7 @@ button:active{transform:scale(.96)}
 <button id="vehicle">🚜 Traktor</button>
 <button id="work">✂️ Arbeiten</button>
 <button id="walter">👴 Walter</button>
+<button id="sound">🔊 Ton an</button>
 </div>
 <button id="interact">E Interagieren</button>
 <div id="stick"><i></i></div>
@@ -135,6 +137,28 @@ function sign(text,x,z){
 }
 sign('WEINGUT / KELLER',-28,-9);sign('WEINBERG',8,17);
 
+// sound system – bewusst ohne externe Audiodateien, damit es auch auf iPad/GitHub Pages läuft
+let audioCtx=null, master=null, engineGain=null, engineOsc=null, engineNoise=null, ambientTimer=null, stepTimer=0;
+function initAudio(){
+ if(audioCtx){audioCtx.resume();return true}
+ try{
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  master=audioCtx.createGain(); master.gain.value=.28; master.connect(audioCtx.destination);
+  const ambient=audioCtx.createGain(); ambient.gain.value=.045; ambient.connect(master);
+  const osc=audioCtx.createOscillator(); osc.type='sine'; osc.frequency.value=170; osc.connect(ambient); osc.start();
+  ambientTimer=setInterval(()=>{ if(!audioCtx||audioCtx.state!=='running')return; chirp(900+Math.random()*500,.035,.018); },6500+Math.random()*4500);
+  document.getElementById('sound').textContent='🔊 Ton an';
+  return true;
+ }catch(e){document.getElementById('sound').textContent='🔇 Ton nicht verfügbar';return false}
+}
+function chirp(freq,dur,vol){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(freq,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(freq*1.25,audioCtx.currentTime+dur);g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+.006);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.connect(g);g.connect(master);o.start();o.stop(audioCtx.currentTime+dur+.02)}
+function noiseBurst(dur,vol,filterFreq=1200){if(!audioCtx)return;const n=audioCtx.createBufferSource(),buf=audioCtx.createBuffer(1,audioCtx.sampleRate*dur,audioCtx.sampleRate),a=buf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/a.length,2);n.buffer=buf;const f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();f.type='lowpass';f.frequency.value=filterFreq;g.gain.setValueAtTime(vol,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);n.connect(f);f.connect(g);g.connect(master);n.start();n.stop(audioCtx.currentTime+dur+.02)}
+function workSound(){if(!initAudio())return;noiseBurst(.12,.12,2200);setTimeout(()=>chirp(1300,.08,.06),55)}
+function stepSound(){if(!audioCtx||audioCtx.state!=='running')return;noiseBurst(.055,.035,700);chirp(120,.06,.018)}
+function startEngine(){if(!initAudio()||engineOsc)return;engineGain=audioCtx.createGain();engineGain.gain.value=.0001;engineGain.connect(master);engineOsc=audioCtx.createOscillator();engineOsc.type='sawtooth';engineOsc.frequency.value=48;engineOsc.connect(engineGain);engineOsc.start();const n=audioCtx.createBufferSource();const b=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;n.buffer=b;n.loop=true;const nf=audioCtx.createBiquadFilter();nf.type='lowpass';nf.frequency.value=900;engineNoise=n;engineNoise.connect(nf);const ng=audioCtx.createGain();ng.gain.value=.055;nf.connect(ng);ng.connect(master);n.start()}
+function stopEngine(){if(!audioCtx)return;if(engineGain)engineGain.gain.setTargetAtTime(.0001,audioCtx.currentTime,.05);if(engineOsc){engineOsc.stop(audioCtx.currentTime+.18);engineOsc=null}if(engineNoise){engineNoise.stop(audioCtx.currentTime+.18);engineNoise=null}}
+function updateEngine(speed){if(!audioCtx||!engineOsc||!engineGain)return;const rpm=48+Math.abs(speed)*9;engineOsc.frequency.setTargetAtTime(rpm,audioCtx.currentTime,.04);engineGain.gain.setTargetAtTime(.035+Math.abs(speed)*.012,audioCtx.currentTime,.05)}
+
 // state
 let driving=false,money=1000,cared=0,nearVine=null,nearTractor=false;
 const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')vehicleAction();if(e.key.toLowerCase()==='f')workAction()});
@@ -144,19 +168,21 @@ function msg(t){let h=document.getElementById('hint');h.textContent=t;h.style.di
 let lastZone='';
 function msgOnce(t){if(lastZone!==t){lastZone=t;msg(t)}}
 function vehicleAction(){
- if(!driving && distance(player,tractor)<3){driving=true;player.visible=false;msg('🚜 Eingestiegen – fahre los!')}
- else if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.3;msg('👨‍🌾 Ausgestiegen')}
- else msg('Geh zuerst direkt zum Traktor.')
+ if(!driving && distance(player,tractor)<3){initAudio();driving=true;player.visible=false;startEngine();msg('🚜 Eingestiegen – der alte Diesel springt an!');chirp(75,.22,.08)}
+ else if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.3;stopEngine();msg('👨‍🌾 Ausgestiegen');noiseBurst(.08,.08,500)}
+ else {initAudio();msg('Geh zuerst direkt zum Traktor.')}
 }
 function workAction(){
- if(driving){msg('Erst aussteigen.');return}
- if(nearVine && cared<6){cared++;money=Math.max(0,money-2);nearVine.userData.done=true;nearVine.children.forEach(o=>{if(o.material?.color)o.material.color.set(0x65df70)});msg('✂️ Rebe gepflegt!');}
- else if(cared>=6)msg('🍇 Alle markierten Reben sind gepflegt!')
- else msg('Geh direkt zu einer gelb markierten Rebe.')
+ initAudio();
+ if(driving){msg('Erst aussteigen.');chirp(180,.06,.03);return}
+ if(nearVine && cared<6){cared++;money=Math.max(0,money-2);nearVine.userData.done=true;nearVine.children.forEach(o=>{if(o.material?.color)o.material.color.set(0x65df70)});workSound();msg('✂️ Rebe gepflegt!');}
+ else if(cared>=6){chirp(720,.08,.035);msg('🍇 Alle markierten Reben sind gepflegt!')}
+ else {chirp(220,.07,.025);msg('Geh direkt zu einer gelb markierten Rebe.')}
 }
 document.getElementById('vehicle').onclick=vehicleAction;
 document.getElementById('work').onclick=workAction;
-document.getElementById('walter').onclick=()=>msg('👴 Walter: „Dieter hätte erst den Weinberg gezeigt – dann den Keller.“');
+document.getElementById('walter').onclick=()=>{initAudio();chirp(520,.1,.035);msg('👴 Walter: „Dieter hätte erst den Weinberg gezeigt – dann den Keller.“')};
+document.getElementById('sound').onclick=()=>{initAudio();chirp(740,.09,.06);msg('🔊 Ton ist an – iPad-Audio wurde gestartet.')};
 
 // controls
 const stick=document.getElementById('stick'),knob=stick.querySelector('i');let joy={x:0,y:0},joyActive=false;
@@ -177,13 +203,15 @@ function update(dt){
   tractor.rotation.y += steer*(1.15+Math.abs(speed)*.08)*dt;
   tractor.position.x+=Math.sin(tractor.rotation.y)*speed*dt;
   tractor.position.z+=Math.cos(tractor.rotation.y)*speed*dt;
+  updateEngine(speed);
+  if(Math.abs(speed)>1.2 && Math.random()<dt*1.7)noiseBurst(.035,.018,450);
   tractor.position.x=Math.max(-42,Math.min(42,tractor.position.x));tractor.position.z=Math.max(-34,Math.min(34,tractor.position.z));
  }else{
   let x=joyActive?joy.x:((keys.d?1:0)-(keys.a?1:0));
   let z=joyActive?joy.y:((keys.s?1:0)-(keys.w?1:0));
   let v=new THREE.Vector3(x,0,z);if(v.length()>1)v.normalize();
   player.position.addScaledVector(v,4.5*dt);
-  if(v.lengthSq()>.01)player.rotation.y=Math.atan2(v.x,v.z);
+  if(v.lengthSq()>.01){player.rotation.y=Math.atan2(v.x,v.z);stepTimer-=dt;if(stepTimer<=0){stepSound();stepTimer=.42}}else stepTimer=0;
   player.position.x=Math.max(-42,Math.min(42,player.position.x));player.position.z=Math.max(-34,Math.min(34,player.position.z));
  }
  nearVine=null;let best=999;
@@ -211,7 +239,7 @@ let last=performance.now();
 function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;update(dt);cameraUpdate();ui();renderer.render(scene,camera);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-msg('0.7.2: Welt lädt – 12 Reben + Weingut + Keller');
+msg('0.7.4: Ton bereit – 🔊 starten und los geht’s!');
 </script>
 </body>
 </html>
