@@ -1,24 +1,193 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>Weingut 3D 0.6</title>
-<style>html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:system-ui;color:#f7ead7}#game{position:fixed;inset:0}.hud{position:fixed;inset:0;pointer-events:none}.top{padding:12px 15px;display:flex;justify-content:space-between;background:linear-gradient(#111b,transparent)}.panel{position:absolute;left:12px;right:12px;bottom:12px;max-width:520px;margin:auto;background:#211a14dd;padding:13px;border:1px solid #765b3b;border-radius:17px;pointer-events:auto}.buttons{display:flex;gap:7px;flex-wrap:wrap}button{background:#35291f;color:#f7ead7;border:1px solid #715537;border-radius:10px;padding:10px;font-weight:800}.primary{background:#c89c5b;color:#18130e}.pad{position:absolute;left:15px;bottom:150px;width:90px;height:90px;border-radius:50%;background:#15110dcc;pointer-events:auto}.pad button{position:absolute;width:30px;height:30px;padding:0}.u{left:30px;top:5px}.d{left:30px;bottom:5px}.l{left:5px;top:30px}.r{right:5px;top:30px}.hint{font-size:11px;color:#cdbda7;margin-top:7px}</style></head><body><div id="game"></div><div class="hud"><div class="top"><b>🍇 Weingut</b><span>Jahr 1 · Frühjahr</span></div><div class="panel"><div id="status"><b>Dieter's Weinberg</b><br>Fahre mit dem alten Schlepper durch die Rebreihen.</div><div class="buttons"><button class="primary" onclick="tractorMode()">🚜 Schlepper</button><button onclick="walkMode()">🧍 Aussteigen</button><button onclick="work()">✂️ Arbeit</button><button onclick="story()">📖 Walter</button></div><div class="hint">iPad: Pfeile zum Fahren. Auf der 3D-Fläche wischen = Lenken/Kamera.</div></div><div class="pad"><button class="u">▲</button><button class="d">▼</button><button class="l">◀</button><button class="r">▶</button></div></div>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Weingut Dieter – Prototype 0.7</title>
+<style>
+html,body{margin:0;overflow:hidden;background:#111;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
+#hud{position:fixed;left:12px;top:10px;z-index:10;color:#fff;text-shadow:0 2px 4px #000;font-weight:700}
+#hud .title{font-size:20px} #hud .small{font-size:13px;margin-top:3px}
+#mission{position:fixed;right:12px;top:10px;z-index:10;background:#0008;color:#fff;padding:10px 12px;border-radius:12px;font-size:13px}
+button{border:0;border-radius:14px;background:#0009;color:#fff;font-weight:800;padding:12px 15px;font-size:14px;box-shadow:0 3px 12px #0006}
+button:active{transform:scale(.96);background:#333d}
+#actions{position:fixed;left:12px;bottom:14px;z-index:12;display:flex;gap:8px}
+#drive{position:fixed;right:12px;bottom:12px;z-index:12;display:none;width:190px;height:150px}
+#drive button{position:absolute;width:58px;height:58px;padding:0;font-size:23px}
+#left{left:0;bottom:0}#right{left:66px;bottom:0}#gas{right:0;bottom:65px}#brake{right:0;bottom:0}
+#joy{position:fixed;left:18px;bottom:18px;width:135px;height:135px;border-radius:50%;background:#0005;border:2px solid #fff6;z-index:11;display:none}
+#knob{position:absolute;width:58px;height:58px;border-radius:50%;background:#fff9;left:38px;top:38px}
+#hint{position:fixed;left:50%;bottom:170px;transform:translateX(-50%);z-index:12;color:#fff;background:#0009;padding:9px 13px;border-radius:12px;text-align:center;display:none}
+#fade{position:fixed;inset:0;background:#000;z-index:30;pointer-events:none;opacity:0;transition:opacity .25s}
+</style>
+</head>
+<body>
+<div id="hud"><div class="title">🍇 WEINGUT DIETER</div><div class="small" id="status">Zu Fuß · Frühling · 1.000 €</div></div>
+<div id="mission">Pflegeauftrag<br><b id="count">0 / 6 Reben</b></div>
+<div id="hint"></div>
+<div id="actions">
+  <button id="enter">🚜 Einsteigen</button>
+  <button id="work">✂️ Arbeit</button>
+  <button id="walter">👴 Walter</button>
+</div>
+<div id="joy"><div id="knob"></div></div>
+<div id="drive">
+ <button id="left">◀</button><button id="right">▶</button>
+ <button id="gas">▲</button><button id="brake">▼</button>
+</div>
+<div id="fade"></div>
 <script type="module">
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
-const S=new THREE.Scene();S.background=new THREE.Color(0x9bb5c0);S.fog=new THREE.Fog(0x9bb5c0,60,190);
-const C=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,300);C.position.set(8,7,13);
-const R=new THREE.WebGLRenderer({antialias:true});R.setSize(innerWidth,innerHeight);R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;document.querySelector("#game").appendChild(R.domElement);
-S.add(new THREE.HemisphereLight(0xffead0,0x405237,2));let sun=new THREE.DirectionalLight(0xffdfad,2.2);sun.position.set(-30,50,20);sun.castShadow=true;S.add(sun);
-let ground=new THREE.Mesh(new THREE.PlaneGeometry(220,220),new THREE.MeshStandardMaterial({color:0x718653}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;S.add(ground);
-function box(w,h,d,c,x,y,z,parent=S){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.9}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
-function vine(x,z){box(.12,1.5,.12,0x503b25,x,.75,z);for(let i=0;i<3;i++){let g=new THREE.Mesh(new THREE.SphereGeometry(.22,7,5),new THREE.MeshStandardMaterial({color:0x315b31}));g.scale.set(1.5,.5,1);g.position.set(x+(i-1)*.25,1.2,z+(i%2-.5)*.3);S.add(g)}if(Math.random()<.7)box(.12,.12,.12,0x63376b,x,1,z)}
-for(let x=-35;x<=35;x+=5)for(let z=-60;z<=60;z+=3)vine(x,z);
-box(16,5,11,0x76543d,-57,2.5,-39);box(18,1.1,13,0x3e2b23,-57,5.55,-39);
-const T=new THREE.Group();T.position.set(0,.45,22);S.add(T);box(2.2,.9,3.3,0x58493c,0,.75,0,T);box(1.9,.55,1.4,0x76553d,0,1.2,-1,T);for(let x of[-1,1])for(let z of[-1.05,1.05]){let w=new THREE.Mesh(new THREE.CylinderGeometry(z<0?.55:.43,z<0?.55:.43,.42,14),new THREE.MeshStandardMaterial({color:0x29231e}));w.rotation.z=Math.PI/2;w.position.set(x*1.05,.48,z);w.castShadow=true;T.add(w)}box(1.7,.2,1.4,0x4a3a2d,0,1.9,.3,T);box(2.8,.22,1.2,0x664b35,0,.55,-2.05,T);box(3,.25,.12,0x35271d,0,.78,-2.62,T);
-let keys={},mode="tractor";addEventListener("keydown",e=>keys[e.key.toLowerCase()]=1);addEventListener("keyup",e=>keys[e.key.toLowerCase()]=0);
-function set(t){document.querySelector("#status").innerHTML=t}
-window.tractorMode=()=>{mode="tractor";set("<b>🚜 Schlepper</b><br>Der alte Schlepper läuft noch. Die rostige Frontplattform ist bereit für Kisten und Werkzeug.")};
-window.walkMode=()=>{mode="walk";set("<b>🧍 Zu Fuß</b><br>Du kannst den Weinberg erkunden. Als Nächstes bauen wir echte Arbeitsplätze an den Rebstöcken.")};
-window.work=()=>{mode="walk";set("<b>✂️ Arbeitsprobe</b><br>Geh zu einer Rebreihe. In der nächsten Version wird dort ein echter Rebschnitt mit einzelnen Rebstöcken möglich.")};
-window.story=()=>set("<b>📖 Walter:</b><br>„Dieter ist mit diesem Schlepper durch jeden Winkel gefahren. Rost hatte er damals schon.“");
-function touch(cls,k){let b=document.querySelector(cls);b.onpointerdown=()=>keys[k]=1;b.onpointerup=()=>keys[k]=0;b.onpointercancel=()=>keys[k]=0}touch(".u","w");touch(".d","s");touch(".l","a");touch(".r","d");
-function drive(){if(mode!="tractor")return;let f=(keys.w?1:0)-(keys.s?1:0),st=(keys.a?1:0)-(keys.d?1:0);T.rotation.y+=st*.035*f;let v=new THREE.Vector3(0,0,-f*.11).applyQuaternion(T.quaternion);T.position.add(v);T.position.x=Math.max(-48,Math.min(48,T.position.x));T.position.z=Math.max(-72,Math.min(60,T.position.z))}
-function loop(){requestAnimationFrame(loop);drive();let off=new THREE.Vector3(7,6,11).applyQuaternion(T.quaternion);C.position.lerp(T.position.clone().add(off),.08);C.lookAt(T.position.x,T.position.y+1,T.position.z);R.render(S,C)}loop();addEventListener("resize",()=>{C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)})
-</script></body></html>
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9dc9e8);
+scene.fog=new THREE.Fog(0x9dc9e8,80,260);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x5d7446,1.8));
+const sun=new THREE.DirectionalLight(0xfff3d1,2.5); sun.position.set(-60,90,40); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); scene.add(sun);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(360,360),new THREE.MeshStandardMaterial({color:0x78975a,roughness:1}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+function box(x,y,z,sx,sy,sz,c,rot=0){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),new THREE.MeshStandardMaterial({color:c,roughness:.9}));
+ m.position.set(x,y,z);m.rotation.y=rot;m.castShadow=m.receiveShadow=true;scene.add(m);return m;
+}
+function cyl(x,y,z,r,h,c){
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),new THREE.MeshStandardMaterial({color:c,roughness:.9}));
+ m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;scene.add(m);return m;
+}
+function vine(x,z,marked=false){
+ const g=new THREE.Group();g.position.set(x,0,z);
+ const post=new THREE.Mesh(new THREE.CylinderGeometry(.045,.06,1.65,8),new THREE.MeshStandardMaterial({color:0x66503b}));
+ post.position.y=.82;g.add(post);
+ for(let i=-1;i<=1;i++){const leaf=new THREE.Mesh(new THREE.SphereGeometry(.22,.7,5),new THREE.MeshStandardMaterial({color:0x3c7136}));
+   leaf.scale.set(1.8,.45,.7);leaf.position.set(i*.32,1.0,0);g.add(leaf)}
+ if(marked){const ring=new THREE.Mesh(new THREE.TorusGeometry(.48,.035,8,24),new THREE.MeshBasicMaterial({color:0xffd84d}));
+   ring.rotation.x=Math.PI/2;ring.position.y=.03;g.add(ring);g.userData.marked=true}
+ scene.add(g); return g;
+}
+// vineyard lanes
+for(let row=-5;row<=5;row++){
+ const z=row*3.3;
+ box(0,.025,z,74,.05,2.0,0x9a7a52);
+ for(let x=-35;x<=35;x+=2.2) vine(x,z+(row%2?-.35:.35), row===0 && x%4.4===0);
+}
+const workVines=[];
+scene.traverse(o=>{if(o.userData.marked)workVines.push(o)});
+
+// winery
+box(-24,3,-12,18,6,12,0x9b7654); box(-24,6.4,-12,18,.7,12,0x573f31);
+box(-24,2.3,-18.2,5,4.6,.35,0x342b26);
+for(let x=-30;x<=-18;x+=3) box(x,2.5,-18.0,1.4,1.5,.25,0x4a3020);
+cyl(-24,7.6,-12,2.3,.6,0x514034);
+
+// hills
+for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(18+Math.random()*10,20,10),new THREE.MeshStandardMaterial({color:0x617b55}));
+ m.scale.y=.35;m.position.set(-150+i*28,5,-100-Math.random()*40);scene.add(m)}
+
+// village + church
+for(let i=0;i<8;i++){const x=75+Math.random()*28,z=-55+Math.random()*25;box(x,2,z,5,4,5,0xb58f68)}
+const church=box(86,5,-55,6,10,6,0xd2c2a3); box(86,11,-55,1.2,7,1.2,0x8d7764);
+const roof=new THREE.Mesh(new THREE.ConeGeometry(4.5,3.5,4),new THREE.MeshStandardMaterial({color:0x514a43}));
+roof.position.set(86,11.8,-55);roof.rotation.y=Math.PI/4;scene.add(roof);
+
+// tractor
+const tractor=new THREE.Group(); tractor.position.set(7,.15,8);
+function tbox(x,y,z,sx,sy,sz,c){const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),new THREE.MeshStandardMaterial({color:c,roughness:1,metalness:.05}));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;tractor.add(m);return m}
+tbox(0,.8,0,2.7,1.1,3.3,0x5a4f3c); tbox(0,1.45,-.35,1.7,1.0,1.8,0x403a31);
+tbox(0,.38,-2.0,2.9,.25,1.0,0x66513d);
+for(const x of [-1.35,1.35])for(const z of [-1.15,1.15]){
+ const w=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.35,16),new THREE.MeshStandardMaterial({color:0x171717}));
+ w.rotation.z=Math.PI/2;w.position.set(x,.55,z);w.castShadow=true;tractor.add(w)
+}
+const wheel=new THREE.Mesh(new THREE.TorusGeometry(.38,.07,8,16),new THREE.MeshStandardMaterial({color:0x28231d}));
+wheel.position.set(0,1.15,.4);wheel.rotation.x=Math.PI/2;tractor.add(wheel);
+scene.add(tractor);
+
+// player
+const player=new THREE.Group(); player.position.set(3,.1,4);
+const body=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.75,6,10),new THREE.MeshStandardMaterial({color:0x31485a}));
+body.position.y=.65;body.castShadow=true;player.add(body);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8),new THREE.MeshStandardMaterial({color:0xd3a47d}));
+head.position.y=1.25;head.castShadow=true;player.add(head);
+scene.add(player);
+
+let driving=false, money=1000, cared=0, workCooldown=0;
+const keys={}; addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')toggleVehicle();if(e.key.toLowerCase()==='f')doWork();});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+
+function dist(a,b){return a.position.distanceTo(b.position)}
+function toggleVehicle(){
+ if(!driving && dist(player,tractor)<2.7){driving=true;player.visible=false;hint('🚜 Eingestiegen – jetzt fahren');}
+ else if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.2;hint('👨‍🌾 Ausgestiegen');}
+}
+function doWork(){
+ if(driving){hint('Erst aussteigen – dann kannst du an der Rebe arbeiten.');return}
+ let nearest=null,nd=99; for(const v of workVines){const d=dist(player,v);if(d<nd){nd=d;nearest=v}}
+ if(nearest && nd<2.2 && workCooldown<=0){cared++;workCooldown=1.2;money=Math.max(0,money-2);nearest.children.forEach(o=>{if(o.geometry?.type==='TorusGeometry')o.material.color.set(0x69e36c)});hint('✂️ Rebe gepflegt!');}
+ else hint('Geh näher an eine markierte Rebe.');
+}
+function hint(t){const h=document.getElementById('hint');h.textContent=t;h.style.display='block';clearTimeout(h.t);h.t=setTimeout(()=>h.style.display='none',1800)}
+document.getElementById('enter').onclick=toggleVehicle;
+document.getElementById('work').onclick=doWork;
+document.getElementById('walter').onclick=()=>hint('👴 Walter: „Dein Großvater hätte gesagt: Erst fahren, dann schrauben.“');
+document.getElementById('count').textContent='0 / '+workVines.length;
+
+// touch controls
+let joy={x:0,y:0},joyOn=false;
+const joyEl=document.getElementById('joy'),knob=document.getElementById('knob');
+function joyMove(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const l=Math.hypot(dx,dy),max=48;if(l>max){dx*=max/l;dy*=max/l}knob.style.transform=`translate(${dx}px,${dy}px)`;joy.x=dx/max;joy.y=dy/max}
+joyEl.addEventListener('pointerdown',e=>{joyOn=true;joyEl.setPointerCapture(e.pointerId);joyMove(e)});
+joyEl.addEventListener('pointermove',e=>{if(joyOn)joyMove(e)});
+joyEl.addEventListener('pointerup',()=>{joyOn=false;joy.x=joy.y=0;knob.style.transform='translate(0,0)'});
+function hold(id,down,up){const b=document.getElementById(id);b.addEventListener('pointerdown',e=>{e.preventDefault();keys[down]=true});b.addEventListener('pointerup',()=>keys[down]=false);b.addEventListener('pointercancel',()=>keys[down]=false)}
+hold('left','arrowleft');hold('right','arrowright');hold('gas','w');hold('brake','s');
+
+function update(dt){
+ workCooldown=Math.max(0,workCooldown-dt);
+ if(driving){
+   const steer=(keys.arrowleft?-1:0)+(keys.arrowright?1:0);
+   const throttle=(keys.w?1:0)-(keys.s?0.8:0);
+   tractor.rotation.y += steer*1.35*dt*(0.45+Math.abs(throttle)*.55);
+   const speed=throttle*6.5;
+   tractor.position.x += Math.sin(tractor.rotation.y)*speed*dt;
+   tractor.position.z += Math.cos(tractor.rotation.y)*speed*dt;
+   // keep within play area
+   tractor.position.x=Math.max(-38,Math.min(38,tractor.position.x));
+   tractor.position.z=Math.max(-32,Math.min(32,tractor.position.z));
+   camera.position.lerp(new THREE.Vector3(tractor.position.x-Math.sin(tractor.rotation.y)*7,4.8,tractor.position.z-Math.cos(tractor.rotation.y)*7),.12);
+   camera.lookAt(tractor.position.x,1,tractor.position.z);
+ }else{
+   const dx=joyOn?joy.x:((keys.d?1:0)-(keys.a?1:0));
+   const dz=joyOn?joy.y:((keys.s?1:0)-(keys.w?1:0));
+   const v=new THREE.Vector3(dx,0,dz); if(v.length()>1)v.normalize();
+   player.position.x+=v.x*4.2*dt;player.position.z+=v.z*4.2*dt;
+   if(v.lengthSq()>0.01)player.rotation.y=Math.atan2(v.x,v.z);
+   camera.position.lerp(new THREE.Vector3(player.position.x-5,4.5,player.position.z-6),.1);
+   camera.lookAt(player.position.x,1,player.position.z);
+ }
+ player.position.x=Math.max(-38,Math.min(38,player.position.x));player.position.z=Math.max(-32,Math.min(32,player.position.z));
+ document.getElementById('status').textContent=(driving?'🚜 Traktor · ':'👨‍🌾 Zu Fuß · ')+'Frühling · '+money.toLocaleString('de-DE')+' €';
+ document.getElementById('count').textContent=cared+' / '+workVines.length+' Reben';
+}
+let last=performance.now();
+function loop(now){const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+
+function setModeUI(){joyEl.style.display=driving?'none':'block';document.getElementById('drive').style.display=driving?'block':'none';}
+const oldToggle=toggleVehicle;
+// refresh controls every frame
+setInterval(setModeUI,100);
+
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+hint('0.7 – Einsteigen, fahren, aussteigen, laufen und arbeiten');
+</script>
+</body>
+</html>
