@@ -42,6 +42,11 @@ button:active{transform:scale(.96)}
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
+window.addEventListener('error',e=>{
+ const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:999;background:#300;color:#fff;padding:24px;font:16px system-ui;white-space:pre-wrap';
+ d.textContent='3D-Ladefehler\\n'+(e.message||'Unbekannter Fehler')+'\\n\\nBitte Screenshot schicken.';
+ document.body.appendChild(d);
+});
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x9fc8df);
 scene.fog=new THREE.Fog(0x9fc8df,90,260);
@@ -90,7 +95,7 @@ box([82,5,-53],[6,10,6],0xd2c4a7);box([82,11,-53],[1.2,6,1.2],0x817466);
 let roof=mesh(new THREE.ConeGeometry(4.3,3.3,4),mat(0x514b43),[82,11.8,-53]);roof.rotation.y=Math.PI/4;
 
 // Betretbare Innenräume: Weingut + Keller
-box([-28,2.2,-17],[17,.25,9],0x6f5b48); // floor
+box([-28,.12,-17],[17,.25,9],0x6f5b48); // floor
 box([-28,5.5,-21.2],[17,6,.35],0x4d392e);
 box([-36.3,3,-17],[.35,6,9],0x73553d);
 box([-19.7,3,-17],[.35,6,9],0x73553d);
@@ -105,7 +110,6 @@ box([-21,2.8,-27],[.35,5.6,9],0x49372d);
 box([-28,5.6,-27],[14,.5,9],0x3e3028);
 box([-35,2.8,-31.3],[28,.35,.35],0x49372d);
 box([-21,2.8,-31.3],[28,.35,.35],0x49372d);
-sign('EINGANG',-28, -11.8); sign('KELLER',-28,-31.5);
 
 // cellar barrels
 for(let i=-2;i<=2;i++){cyl([-28+i*2.3,.8,-29.5],.75,1.5,0x6d4b2f);}
@@ -120,6 +124,8 @@ scene.add(tractor);
 const player=new THREE.Group();player.position.set(3,.05,4);
 let body=new THREE.Mesh(new THREE.CapsuleGeometry(.28,.72,6,10),mat(0x31485a));body.position.y=.65;body.castShadow=true;player.add(body);
 let head=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8),mat(0xd3a47d));head.position.y=1.25;head.castShadow=true;player.add(head);scene.add(player);
+
+box([3,.06,7],[4,.12,1.2],0x6d5940);
 
 // zones: not walls, just labels/locations
 const signs=[];
