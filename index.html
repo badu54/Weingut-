@@ -22,18 +22,24 @@ button:active{transform:scale(.96)}
 #interact{position:fixed;right:18px;top:88px;z-index:25;display:none;background:#d8a52c;color:#18130a}
 #zone{position:fixed;inset:0;pointer-events:none;z-index:10}
 #sound{position:fixed;right:12px;bottom:14px;z-index:40;background:#111c;color:#fff}
+
+#infoPanel{position:fixed;left:12px;bottom:72px;z-index:35;background:#101b;color:#fff;padding:14px 16px;border-radius:16px;max-width:330px;display:none;box-shadow:0 5px 20px #0006;font-size:13px;line-height:1.45}
+#infoPanel b{font-size:15px}.bar{height:7px;background:#ffffff22;border-radius:9px;overflow:hidden;margin:3px 0 7px}.bar i{display:block;height:100%;background:#d8a52c}
+#flow{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:24;background:#111c;color:#fff;padding:8px 12px;border-radius:14px;font-size:12px;text-align:center;max-width:72%}
+#buttons{max-width:70%}
 </style>
 </head>
 <body>
 <div id="hud"><div class="title">🍇 WEINGUT DIETER</div><div class="sub" id="status">Zu Fuß · Frühling · 1.000 €</div></div>
-<div id="mission">Reben gepflegt<br><b id="count">0 / 12</b></div>
+<div id="mission">Reben gepflegt<br><b id="count">0 / 12</b><br><span id="stock">Trauben 0 L · Wein 0 L</span></div>
 <div id="hint"></div>
 <div id="buttons">
 <button id="vehicle">🚜 Traktor</button>
 <button id="work">✂️ Arbeiten</button>
 <button id="walter">👴 Walter</button>
-<button id="sound">🔊 Ton an</button>
+<button id="sound">🔊 Ton an</button><button id="info">📋 Weinberg-Info</button>
 </div>
+<div id="infoPanel"></div><div id="flow">🍇 Ernte → Kelter → Wein → Flaschen → Verkauf</div>
 <button id="interact">E Interagieren</button>
 <div id="stick"><i></i></div>
 <div id="drive">
@@ -115,6 +121,13 @@ box([-21,2.8,-31.3],[28,.35,.35],0x49372d);
 
 // cellar barrels
 for(let i=-2;i<=2;i++){cyl([-28+i*2.3,.8,-29.5],.75,1.5,0x6d4b2f);}
+// winery equipment: old press, tanks, bottling bench, sales pallet
+box([-24,.8,-17],[2.2,1.6,1.4],0x6a4a2e);
+cyl([-24,1.7,-17],.65,1.2,0x8c6a3f).rotation.x=Math.PI/2;
+box([-31,.9,-16],[1.4,1.8,1.4],0x777a69);
+box([-34,.5,-14],[2.5,.9,1.4],0x9a8360);
+box([-28,.5,-12.2],[2.8,.7,1.1],0x5c4430);
+
 // tractor
 const tractor=new THREE.Group();tractor.position.set(6,.15,8);
 function tb(p,s,c){let o=new THREE.Mesh(new THREE.BoxGeometry(...s),mat(c));o.position.set(...p);o.castShadow=o.receiveShadow=true;tractor.add(o)}
@@ -161,6 +174,47 @@ function updateEngine(speed){if(!audioCtx||!engineOsc||!engineGain)return;const 
 
 // state
 let driving=false,money=1000,cared=0,nearVine=null,nearTractor=false;
+let harvestLiters=0,wineLiters=0,bottles=0,wineCrates=0;
+let carried=null, harvestDone=false, pressed=false, bottledDone=false, soldDone=false;
+const vineyardInfo={size:0.72,soil:'Kalkmergel · gute Drainage',sun:87,water:71,frost:28,pests:19,health:82,yieldBase:1900};
+const equipment={press:true,tanks:2,bottling:true,oldPressCondition:61};
+function isVineyard(){return player.position.z>-8 && player.position.x<43}
+function isWinery(){return player.position.x>-37&&player.position.x<-19&&player.position.z>-23&&player.position.z<-10}
+function isCellar(){return player.position.x>-36&&player.position.x<-20&&player.position.z<-23}
+function setInfo(){
+ const p=document.getElementById('infoPanel');
+ p.innerHTML=`<b>🌱 Weinberg · 0,72 ha</b><br>${vineyardInfo.soil}<br>
+ ☀️ Sonne ${vineyardInfo.sun}%<div class="bar"><i style="width:${vineyardInfo.sun}%"></i></div>
+ 💧 Wasser ${vineyardInfo.water}%<div class="bar"><i style="width:${vineyardInfo.water}%"></i></div>
+ ❄️ Frostrisiko ${vineyardInfo.frost}%<div class="bar"><i style="width:${vineyardInfo.frost}%"></i></div>
+ 🐛 Schädlingsdruck ${vineyardInfo.pests}%<div class="bar"><i style="width:${vineyardInfo.pests}%"></i></div>
+ ❤️ Rebenzustand ${vineyardInfo.health}%<div class="bar"><i style="width:${vineyardInfo.health}%"></i></div>
+ <b>Ertragspotenzial:</b> ca. ${vineyardInfo.yieldBase} L Trauben vor Verlusten`;
+}
+function toggleInfo(){
+ initAudio(); const p=document.getElementById('infoPanel');
+ if(p.style.display==='block'){p.style.display='none';return}
+ setInfo();p.style.display='block';msg('📋 Weinberg-Daten geöffnet');
+}
+function carryObject(type){
+ if(carried)return false;
+ const g=new THREE.Group();
+ const c=type==='basket'?0x9a6b36:0x7d5636;
+ const body=new THREE.Mesh(new THREE.BoxGeometry(type==='basket'?0.65:1.0,.42,type==='basket'?.65:.8),mat(c));body.position.y=.35;g.add(body);
+ if(type==='basket'){for(let i=-1;i<=1;i+=2){let h=new THREE.Mesh(new THREE.TorusGeometry(.27,.035,8,20,Math.PI),mat(0x4d321d));h.rotation.z=Math.PI/2;h.position.set(i*.25,.55,0);g.add(h)}}
+ else {for(let i=-.34;i<=.34;i+=.68){let b=new THREE.Mesh(new THREE.BoxGeometry(.07,.55,.9),mat(0x4b321f));b.position.set(i,.58,0);g.add(b)}}
+ g.position.set(player.position.x,0.05,player.position.z+1.0);scene.add(g);carried={type,mesh:g};msg(type==='basket'?'🧺 Korb aufgenommen – zum Traktor/Weingut tragen.':'📦 Weinkiste aufgenommen – zum Verkauf tragen.');chirp(type==='basket'?420:260,.08,.045);return true;
+}
+function dropCarried(where){
+ if(!carried)return;
+ scene.remove(carried.mesh);
+ const t=carried.type;
+ carried=null;
+ if(where==='tractor'){harvestLiters+=350;msg('🧺 Korb in den Erntebereich geladen.');}
+ else if(where==='press'){harvestLiters+=350;msg('🧺 Trauben zur Kelter gebracht.');}
+ else if(where==='sale'){money+=wineCrates*140;msg('💶 Wein verkauft! +'+(wineCrates*140)+' €');wineCrates=0;soldDone=true;}
+ noiseBurst(.1,.07,650);
+}
 const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')vehicleAction();if(e.key.toLowerCase()==='f')workAction()});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 function distance(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
@@ -168,6 +222,7 @@ function msg(t){let h=document.getElementById('hint');h.textContent=t;h.style.di
 let lastZone='';
 function msgOnce(t){if(lastZone!==t){lastZone=t;msg(t)}}
 function vehicleAction(){
+ if(!driving && distance(player,tractor)<3 && carried){dropCarried('tractor');return}
  if(!driving && distance(player,tractor)<3){initAudio();driving=true;player.visible=false;startEngine();msg('🚜 Eingestiegen – der alte Diesel springt an!');chirp(75,.22,.08)}
  else if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.3;stopEngine();msg('👨‍🌾 Ausgestiegen');noiseBurst(.08,.08,500)}
  else {initAudio();msg('Geh zuerst direkt zum Traktor.')}
@@ -175,14 +230,46 @@ function vehicleAction(){
 function workAction(){
  initAudio();
  if(driving){msg('Erst aussteigen.');chirp(180,.06,.03);return}
- if(nearVine && cared<6){cared++;money=Math.max(0,money-2);nearVine.userData.done=true;nearVine.children.forEach(o=>{if(o.material?.color)o.material.color.set(0x65df70)});workSound();msg('✂️ Rebe gepflegt!');}
- else if(cared>=6){chirp(720,.08,.035);msg('🍇 Alle markierten Reben sind gepflegt!')}
- else {chirp(220,.07,.025);msg('Geh direkt zu einer gelb markierten Rebe.')}
+ // carry mode: interact with tractor / receiving area / sales
+ if(carried){
+   if(carried.type==='basket' && nearTractor){dropCarried('tractor');return}
+   if(carried.type==='basket' && isWinery() && distance(player,new THREE.Vector3(-28,0,-18))<7){dropCarried('press');return}
+   if(carried.type==='crate' && isWinery() && distance(player,new THREE.Vector3(-28,0,-18))<7){dropCarried('sale');return}
+   msg('📦 Bring das Stück zur passenden Station.');return;
+ }
+ if(isVineyard() && nearVine && !harvestDone && cared<6){
+   cared++; vineyardInfo.health=Math.min(100,vineyardInfo.health+2); vineyardInfo.pests=Math.max(0,vineyardInfo.pests-2); money=Math.max(0,money-2);
+   nearVine.userData.done=true;nearVine.children.forEach(o=>{if(o.material?.color)o.material.color.set(0x65df70)});
+   workSound();msg('✂️ Rebe gepflegt!');
+   if(cared===6)msg('🌿 Pflege abgeschlossen – jetzt kann die Ernte vorbereitet werden.');
+   return;
+ }
+ if(isVineyard() && cared>=6 && !harvestDone && nearVine){
+   harvestDone=true;
+   const quality=Math.max(.55,Math.min(1.08,(vineyardInfo.health*.55+vineyardInfo.sun*.25+vineyardInfo.water*.20)/100));
+   harvestLiters=Math.round(vineyardInfo.yieldBase*quality);
+   carryObject('basket');msg('🍇 Erste Trauben geerntet: '+harvestLiters+' L Potenzial.');return;
+ }
+ if(isWinery()){
+   if(harvestLiters>0 && !pressed){
+     pressed=true; wineLiters=Math.round(harvestLiters*.75); harvestLiters=0; equipment.oldPressCondition=Math.max(0,equipment.oldPressCondition-4);
+     msg('⚙️ Kelter läuft: 75% Ausbeute → '+wineLiters+' L Wein.');noiseBurst(.3,.09,900);return;
+   }
+   if(pressed && !bottledDone){
+     bottles=Math.floor(wineLiters/.75); wineLiters=0;bottledDone=true;wineCrates=Math.floor(bottles/12);
+     msg('🍾 Abgefüllt: '+bottles+' Flaschen · '+wineCrates+' Kisten.');chirp(900,.14,.06);return;
+   }
+   if(bottledDone && wineCrates>0){carryObject('crate');return}
+ }
+ if(isCellar() && bottledDone && wineCrates>0){carryObject('crate');return}
+ if(cared>=6 && harvestDone){msg('🍷 Ablauf: Trauben → Kelter → Flaschen → Verkauf.')}
+ else {chirp(220,.07,.025);msg('Geh zur gelb markierten Rebe.')}
 }
 document.getElementById('vehicle').onclick=vehicleAction;
 document.getElementById('work').onclick=workAction;
 document.getElementById('walter').onclick=()=>{initAudio();chirp(520,.1,.035);msg('👴 Walter: „Dieter hätte erst den Weinberg gezeigt – dann den Keller.“')};
 document.getElementById('sound').onclick=()=>{initAudio();chirp(740,.09,.06);msg('🔊 Ton ist an – iPad-Audio wurde gestartet.')};
+document.getElementById('info').onclick=toggleInfo;
 
 // controls
 const stick=document.getElementById('stick'),knob=stick.querySelector('i');let joy={x:0,y:0},joyActive=false;
@@ -214,17 +301,24 @@ function update(dt){
   if(v.lengthSq()>.01){player.rotation.y=Math.atan2(v.x,v.z);stepTimer-=dt;if(stepTimer<=0){stepSound();stepTimer=.42}}else stepTimer=0;
   player.position.x=Math.max(-42,Math.min(42,player.position.x));player.position.z=Math.max(-34,Math.min(34,player.position.z));
  }
- nearVine=null;let best=999;
+ if(carried&&!driving){carried.mesh.position.set(player.position.x,0.05,player.position.z+0.95);carried.mesh.rotation.y=player.rotation.y;} nearVine=null;let best=999;
  if(!driving)for(const v of workVines){let d=distance(player,v);if(d<best){best=d;nearVine=v}}
  if(!driving){
    if(player.position.x<-19 && player.position.z>-23 && player.position.z<-10) msgOnce('🏡 Du bist im Weingut');
    if(player.position.x<-21 && player.position.z<-23) msgOnce('🍷 Du bist im Keller');
  }
  nearTractor=!driving&&distance(player,tractor)<3;
- document.getElementById('interact').style.display=(nearTractor||nearVine)?'block':'none';
- document.getElementById('interact').textContent=nearTractor?'🚜 Ein-/Aussteigen':'✂️ Rebe bearbeiten';
- document.getElementById('status').textContent=(driving?'🚜 Traktor · ':'👨‍🌾 Zu Fuß · ')+'Frühling · '+money.toLocaleString('de-DE')+' €';
+ let contextual=isVineyard()&&nearVine;
+ let show=nearTractor||contextual||carried||isWinery()||isCellar();
+ document.getElementById('interact').style.display=show?'block':'none';
+ let label=nearTractor?(carried?'🧺 Abladen & einsteigen':'🚜 Ein-/Aussteigen'):
+   carried?'📦 Ablegen / transportieren':
+   (isWinery()?(pressed&&!bottledDone?'🍾 Abfüllen':(!pressed?'⚙️ Keltern': '📦 Kiste aufnehmen')):
+   (contextual?(harvestDone?'🧺 Ernten / Korb':'✂️ Rebe bearbeiten'):'E Interagieren'));
+ document.getElementById('interact').textContent=label;
+ document.getElementById('status').textContent=(driving?'🚜 Traktor · ':'👨‍🌾 Zu Fuß · ')+'Frühling · '+money.toLocaleString('de-DE')+' € · '+harvestLiters+' L Trauben · '+wineLiters+' L Wein';
  document.getElementById('count').textContent=cared+' / '+workVines.length;
+ document.getElementById('stock').textContent='Trauben '+harvestLiters+' L · Wein '+wineLiters+' L · Kisten '+wineCrates;
 }
 document.getElementById('interact').onclick=()=>nearTractor?vehicleAction():workAction();
 
