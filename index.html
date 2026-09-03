@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Weingut Dieter – 0.8 MATERIALFLUSS</title>
+<title>Weingut Dieter – 0.8.1 GRAFIK & MATERIALFLUSS</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#8db6d0;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
 canvas{display:block}
@@ -31,12 +31,20 @@ button:active{transform:scale(.96)}
 #garagePanel,#housePanel{position:fixed;right:12px;bottom:72px;z-index:36;background:#111d;color:#fff;padding:14px 16px;border-radius:16px;max-width:330px;display:none;box-shadow:0 5px 20px #0006;font-size:13px;line-height:1.45}
 #weight{position:fixed;left:12px;top:105px;z-index:21;background:#111b;color:#fff;padding:7px 10px;border-radius:11px;font-size:12px;display:none}
 .station{font-weight:800}
+
+/* 0.8.1 polish */
+#speedometer{position:fixed;right:14px;top:104px;z-index:28;min-width:105px;background:#111d;color:#fff;padding:8px 11px;border-radius:14px;text-align:center;box-shadow:0 4px 14px #0005;display:none}
+#speedometer b{font-size:25px;line-height:1}
+#speedometer small{font-size:10px;opacity:.8}
+#zoom{position:fixed;right:14px;bottom:215px;z-index:28;display:flex;gap:7px}
+#zoom button{width:48px;height:48px;padding:0;font-size:22px;background:#111d}
+#stationCard{position:fixed;left:50%;top:82px;transform:translateX(-50%);z-index:29;background:#17130fe8;color:#fff;padding:9px 14px;border-radius:14px;text-align:center;display:none;box-shadow:0 4px 16px #0006;font-size:12px}
 </style>
 </head>
 <body>
 <div id="hud"><div class="title">🍇 WEINGUT DIETER</div><div class="sub" id="status">Zu Fuß · Frühling · 1.000 €</div></div>
 <div id="mission">Reben gepflegt<br><b id="count">0 / 12</b><br><span id="stock">Trauben 0 L · Wein 0 L</span></div>
-<div id="hint"></div>
+<div id="hint"></div><div id="speedometer"><b id="speedValue">0</b><br><small>km/h</small></div><div id="zoom"><button id="zoomOut">−</button><button id="zoomIn">+</button></div><div id="stationCard"></div>
 <div id="buttons">
 <button id="vehicle">🚜 Traktor</button>
 <button id="work">✂️ Arbeiten</button>
@@ -477,7 +485,140 @@ let last=performance.now();
 function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;update(dt);cameraUpdate();ui();renderer.render(scene,camera);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-msg('0.8: Hof, Garage, Haus & echter Materialfluss – 🔊 Ton starten und los geht’s!');
+msg('0.8.1: Grafik, Zoom, Gebäude & Materialfluss – 🔊 Ton starten und los geht’s!');
+
+/* ================= 0.8.1 GRAFIK-POLISH + KAMERA + TACHO ================= */
+const speedometer=document.getElementById('speedometer');
+const speedValue=document.getElementById('speedValue');
+const stationCard=document.getElementById('stationCard');
+const zoomUI=document.getElementById('zoom');
+let cameraDistance=6.5;
+let cameraHeight=4.9;
+let pinchStartDist=0, pinchStartZoom=6.5;
+
+function setZoom(v){
+ cameraDistance=Math.max(3.8,Math.min(12,v));
+ cameraHeight=driving?Math.max(3.6,cameraDistance*.72):Math.max(3.1,cameraDistance*.72);
+}
+document.getElementById('zoomIn').onclick=()=>setZoom(cameraDistance-.8);
+document.getElementById('zoomOut').onclick=()=>setZoom(cameraDistance+.8);
+
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraDistance+(e.deltaY>0?.45:-.45))},{passive:false});
+renderer.domElement.addEventListener('touchstart',e=>{
+ if(e.touches.length===2){
+  pinchStartDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  pinchStartZoom=cameraDistance;
+ }
+},{passive:true});
+renderer.domElement.addEventListener('touchmove',e=>{
+ if(e.touches.length===2){
+  const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  if(pinchStartDist) setZoom(pinchStartZoom-(d-pinchStartDist)*.012);
+ }
+},{passive:true});
+
+function detailBox(x,z,w,d,h,c,roofC){
+ box([x,h/2,z],[w,h,d],c);
+ box([x,h+.18,z],[w+.35,.35,d+.35],roofC);
+}
+function windowUnit(x,y,z,rot=0){
+ const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=rot;
+ const frame=mat(0x33271f), glass=mat(0x8da8a8);
+ const a=new THREE.Mesh(new THREE.BoxGeometry(1.05,.08,.08),frame);a.position.y=.52;g.add(a);
+ const b=a.clone();b.position.y=-.52;g.add(b);
+ const c=new THREE.Mesh(new THREE.BoxGeometry(.08,1.08,.08),frame);c.position.x=-.52;g.add(c);
+ const d=c.clone();d.position.x=.52;g.add(d);
+ const pane=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.05),glass);pane.position.z=.02;g.add(pane);
+ g.traverse(o=>{o.castShadow=o.receiveShadow=true});scene.add(g);return g;
+}
+function doorUnit(x,y,z,rot=0,label=''){
+ const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=rot;
+ const frame=mat(0x3b2b20), wood=mat(0x5b3d2a);
+ const d=new THREE.Mesh(new THREE.BoxGeometry(1.8,3.1,.16),wood);g.add(d);
+ for(let yy=-1.1;yy<=1.1;yy+=1.1){const s=new THREE.Mesh(new THREE.BoxGeometry(1.55,.06,.2),frame);s.position.y=yy;g.add(s)}
+ const knob=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),mat(0xb69b63));knob.position.set(.58,0,.13);g.add(knob);
+ if(label){
+  const c=document.createElement('canvas');c.width=400;c.height=90;const ctx=c.getContext('2d');
+  ctx.fillStyle='rgba(20,15,10,.88)';ctx.fillRect(0,0,400,90);ctx.fillStyle='#fff';ctx.font='bold 30px sans-serif';ctx.textAlign='center';ctx.fillText(label,200,58);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.scale.set(2.8,.63,1);s.position.y=2.15;g.add(s);
+ }
+ scene.add(g);return g;
+}
+
+/* richer farm buildings: facade details, roof overhangs, doors, windows */
+windowUnit(-34.8,3.4,-22.08); windowUnit(-21.2,3.4,-22.08);
+doorUnit(-28,1.55,-22.18,0,'ANNNAHME');
+box([-28,6.45,-17],[18.8,.28,10.8],0x40312a);
+/* winery chimney and side lean-to */
+box([-35.5,4.8,-15.2],[1.2,2.7,1.1],0x6b4c3b);
+box([-34.8,6.35,-15.2],[1.45,.3,1.35],0x4a352c);
+/* garage facade detailing */
+windowUnit(-12.1,3.1,-20.55);windowUnit(-4.0,3.1,-20.55);
+doorUnit(-8,1.9,-20.7,0,'GARAGE');
+/* house facade detailing */
+windowUnit(12.3,2.8,-20.05);windowUnit(17.7,2.8,-20.05);
+doorUnit(15,1.55,-20.15,0,'WOHNHAUS');
+/* cellar entrance so the cellar reads as a distinct space */
+box([-28,.35,-23.0],[4.8,.7,1.7],0x514137);
+box([-30.3,1.45,-23.7],[.35,2.3,1.9],0x45362f);
+box([-25.7,1.45,-23.7],[.35,2.3,1.9],0x45362f);
+box([-28,2.55,-23.7],[5.0,.35,1.9],0x45362f);
+doorUnit(-28,1.25,-23.62,0,'KELLER');
+
+/* distinct processing stations */
+function stationLabel(text,x,z){
+ const c=document.createElement('canvas');c.width=480;c.height=100;const ctx=c.getContext('2d');
+ ctx.fillStyle='rgba(22,17,12,.9)';ctx.fillRect(0,0,480,100);ctx.fillStyle='#fff';ctx.font='bold 30px sans-serif';ctx.textAlign='center';ctx.fillText(text,240,63);
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.scale.set(3.5,.72,1);s.position.set(x,3.1,z);scene.add(s);return s;
+}
+stationLabel('🍇 ANNAHME · TRAUBEN',-28,-15.2);
+stationLabel('⚙️ PRESSE',-24,-18.7);
+stationLabel('🛢️ TANK 1',-31,-15.2);
+stationLabel('🛢️ TANK 2',-34.5,-15.2);
+stationLabel('🍾 ABFÜLLUNG',-28,-12.2);
+
+/* cellar barrels are now arranged as a real cellar row */
+for(let i=-2;i<=2;i++){
+ const bx=-28+i*2.3;
+ const barrel=cyl([bx,.95,-29.5],.78,1.55,0x65442e);
+ barrel.rotation.z=Math.PI/2;
+ cyl([bx,.95,-29.95],.82,.10,0x3d2a20).rotation.z=Math.PI/2;
+ stationLabel('🍷 FASSKELLER',-28,-27.2);
+}
+
+/* camera update replacement: zoomable, more natural */
+cameraUpdate=function(){
+ let target=driving?tractor:player;
+ let behind=driving?Math.max(5.0,cameraDistance+1.5):cameraDistance;
+ let pos=new THREE.Vector3(
+   target.position.x-Math.sin(target.rotation.y)*behind,
+   driving?cameraHeight:cameraHeight,
+   target.position.z-Math.cos(target.rotation.y)*behind
+ );
+ camera.position.lerp(pos,.11);
+ camera.lookAt(target.position.x,1.05,target.position.z);
+};
+
+/* tachometer + context card */
+function updatePolishUI(){
+ const sp=driving?Math.abs(((keys.up?1:0)-(keys.down?.65:0))*6.2):0;
+ const km=Math.round(sp*7.2);
+ speedValue.textContent=String(km);
+ speedometer.style.display=driving?'block':'none';
+ zoomUI.style.display='flex';
+ let card='';
+ if(isWinery()&&!driving) card='🏭 WEINGUT · Annahme · Presse · Tanks · Abfüllung';
+ else if(isCellar()&&!driving) card='🍷 KELLER · Fässer · Lagerung';
+ else if(nearGarage()&&!driving) card='🔧 GARAGE · Geräte & Maschinen';
+ else if(nearHouse()&&!driving) card='🏡 HAUS · Schlafen & Zeit';
+ stationCard.textContent=card;stationCard.style.display=card?'block':'none';
+}
+const oldUpdate=update;
+update=function(dt){
+ oldUpdate(dt);
+ updatePolishUI();
+};
+
 </script>
 </body>
 </html>
