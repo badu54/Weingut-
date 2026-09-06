@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Weingut Dieter – 0.8.1 GRAFIK & MATERIALFLUSS</title>
+<title>Weingut Dieter – 0.8.1 FIX2 · GRAFIK · MATERIALFLUSS · FIRST PERSON</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#8db6d0;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
 canvas{display:block}
@@ -38,7 +38,7 @@ button:active{transform:scale(.96)}
 #speedometer small{font-size:10px;opacity:.8}
 #zoom{position:fixed;right:14px;bottom:215px;z-index:28;display:flex;gap:7px}
 #zoom button{width:48px;height:48px;padding:0;font-size:22px;background:#111d}
-#stationCard{position:fixed;left:50%;top:82px;transform:translateX(-50%);z-index:29;background:#17130fe8;color:#fff;padding:9px 14px;border-radius:14px;text-align:center;display:none;box-shadow:0 4px 16px #0006;font-size:12px}
+#viewMode{background:#24372b}#stationCard{position:fixed;left:50%;top:82px;transform:translateX(-50%);z-index:29;background:#17130fe8;color:#fff;padding:9px 14px;border-radius:14px;text-align:center;display:none;box-shadow:0 4px 16px #0006;font-size:12px}
 </style>
 </head>
 <body>
@@ -49,7 +49,7 @@ button:active{transform:scale(.96)}
 <button id="vehicle">🚜 Traktor</button>
 <button id="work">✂️ Arbeiten</button>
 <button id="walter">👴 Walter</button>
-<button id="sound">🔊 Ton an</button><button id="info">📋 Weinberg-Info</button><button id="sleep">🏡 Schlafen</button>
+<button id="sound">🔊 Ton an</button><button id="info">📋 Weinberg-Info</button><button id="viewMode">👁️ First Person</button><button id="sleep">🏡 Schlafen</button>
 </div>
 <div id="infoPanel"></div><div id="flow">🍇 Ernte → Kelter → Wein → Flaschen → Verkauf</div>
 <button id="interact">E Interagieren</button>
@@ -227,9 +227,9 @@ function dropCarried(where){
  else if(where==='sale'){money+=wineCrates*140;msg('💶 Wein verkauft! +'+(wineCrates*140)+' €');wineCrates=0;soldDone=true;}
  noiseBurst(.1,.07,650);
 }
-const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')vehicleAction();if(e.key.toLowerCase()==='f')workAction()});
+const keys={};addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')vehicleAction();if(e.key.toLowerCase()==='f')workAction();if(e.key.toLowerCase()==='v')setViewMode(!firstPerson)});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-function distance(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
+function distance(a,b){if(!a||!b||!a.position||!b.position)return Infinity;return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
 function msg(t){let h=document.getElementById('hint');h.textContent=t;h.style.display='block';clearTimeout(h.tm);h.tm=setTimeout(()=>h.style.display='none',1800)}
 let lastZone='';
 function msgOnce(t){if(lastZone!==t){lastZone=t;msg(t)}}
@@ -334,7 +334,7 @@ const legR=legL.clone();legR.position.x=.13;player.add(legR);
 let animTime=0, workingAnim=0;
 
 // real physical inventory
-let baskets=[], harvestCrates=[], selectedTool='none', processedLiters=0, tankLiters=0, day=18, weather='☀️ Klar', sleepOpen=false;
+let baskets=[], harvestCrates=[], emptyCrates=[], selectedTool='none', processedLiters=0, tankLiters=0, day=18, weather='☀️ Klar', sleepOpen=false;
 const MAX_CARRY_KG=24;
 function carriedWeight(){
  if(!carried)return 0;
@@ -367,11 +367,21 @@ function placeBasketToTrailer(){
  if(add<carried.liters){makeBasket(carried.liters-add,player.position.x,player.position.z)}
  scene.remove(carried.mesh);carried=null;updateWeight();noiseBurst(.12,.09,800);msg('🧺 '+add+' L in die Erntekiste geschüttet. Kiste: '+crate.userData.liters+'/500 L');return true;
 }
+function makeEmptyCrate(x=-22,z=-16){
+ const g=new THREE.Group();g.position.set(x,.85,z);
+ const body=new THREE.Mesh(new THREE.BoxGeometry(1.3,.7,1.05),mat(0x6b4428));g.add(body);
+ for(const xx of [-.5,.5]){const b=new THREE.Mesh(new THREE.BoxGeometry(.08,.85,1.08),mat(0x3f2a1b));b.position.x=xx;g.add(b)}
+ g.userData={kind:'emptyCrate'};g.traverse(o=>{o.castShadow=o.receiveShadow=true});scene.add(g);emptyCrates.push(g);return g;
+}
 function placeCrateAtPress(){
  if(!carried||carried.type!=='crate')return false;
- const L=carried.liters;scene.remove(carried.mesh);carried=null;updateWeight();
- harvestLiters=Math.max(0,harvestLiters-L); pressed=true;processedLiters+=L;wineLiters+=Math.round(L*.75);tankLiters+=Math.round(L*.75);
- msg('⚙️ '+L+' L Trauben verarbeitet → '+Math.round(L*.75)+' L Most/Wein.');noiseBurst(.35,.11,950);return true;
+ const L=carried.liters;
+ if(L<=0){msg('📦 Die Erntekiste ist leer.');return false;}
+ scene.remove(carried.mesh);carried=null;updateWeight();
+ harvestLiters=Math.max(0,harvestLiters-L);
+ const out=Math.round(L*.75); pressed=true;processedLiters+=L;wineLiters+=out;tankLiters+=out;
+ makeEmptyCrate(-22+Math.random()*2,-16+Math.random()*2);
+ msg('⚙️ Presse: '+L+' L Trauben → '+out+' L Most. 📦 Leere Kiste bleibt bei der Kelter.');noiseBurst(.35,.11,950);return true;
 }
 function harvestAtVine(v){
  const base=75+Math.round(Math.random()*55);
@@ -395,7 +405,7 @@ function sleepDays(n){day+=n;vineyardInfo.water=Math.max(25,vineyardInfo.water-n
 
 // override interaction with real 0.8 workflow
 function vehicleAction(){
- if(driving){driving=false;player.visible=true;player.position.copy(tractor.position);player.position.x+=2.3;stopEngine();msg('👨‍🌾 Ausgestiegen');return;}
+ if(driving){driving=false;player.visible=!firstPerson;player.position.copy(tractor.position);player.position.x+=2.3;stopEngine();viewYaw=player.rotation.y;msg('👨‍🌾 Ausgestiegen');return;}
  if(distance(player,tractor)<3){initAudio();driving=true;player.visible=false;startEngine();msg('🚜 Eingestiegen – alter Diesel läuft!');return;}
  msg('Geh zum Traktor.');
 }
@@ -412,7 +422,10 @@ function workAction(){
    msg('🚶 Bring den Gegenstand zur passenden Station.');return
  }
  if(isVineyard()&&nearVine&&!nearVine.userData.done){harvestAtVine(nearVine);return}
- if(isWinery()&&processedLiters>0&&!bottledDone){bottledDone=true;bottles=Math.floor(wineLiters/.75);wineLiters=0;wineCrates=Math.floor(bottles/12);tankLiters=0;msg('🍾 Abgefüllt: '+bottles+' Flaschen · '+wineCrates+' Kisten.');return}
+ if(isWinery()&&processedLiters>0&&!bottledDone){
+   if(harvestLiters>0||harvestCrates.some(c=>c.userData.liters>0)){msg('📦 Erst alle gefüllten Erntekisten zur Kelter bringen. Noch '+harvestLiters+' L Trauben im Erntekreislauf.');return}
+   bottledDone=true;bottles=Math.floor(wineLiters/.75);wineLiters=0;wineCrates=Math.floor(bottles/12);tankLiters=0;msg('🍾 Abfüllung gestartet: '+bottles+' Flaschen · '+wineCrates+' Kisten.');return
+ }
  if(isCellar()&&bottledDone&&wineCrates>0){carryObject('crate');return}
  msg('📍 Geh zu einer markierten Rebe, einem Korb, einer Kiste oder einer Station.');
 }
@@ -444,7 +457,7 @@ hold('steerL','left');hold('steerR','right');hold('throttle','up');hold('reverse
 function update(dt){
  animTime+=dt;
  if(driving){
-  let steer=(keys.left?-1:0)+(keys.right?1:0);let throttle=(keys.up?1:0)-(keys.down?.65:0);let speed=throttle*6.2;
+  let steer=(keys.left?-1:0)+(keys.right?1:0);let throttle=(keys.up?1:0)-((keys.down?.65):0);let speed=throttle*6.2;
   tractor.rotation.y += steer*(1.15+Math.abs(speed)*.08)*dt;
   tractor.position.x+=Math.sin(tractor.rotation.y)*speed*dt;tractor.position.z+=Math.cos(tractor.rotation.y)*speed*dt;
   for(const o of tractor.children){if(o.geometry?.type==='CylinderGeometry')o.rotation.x-=speed*dt*2.5}
@@ -455,7 +468,7 @@ function update(dt){
   let x=joyActive?joy.x:((keys.d?1:0)-(keys.a?1:0));let z=joyActive?joy.y:((keys.s?1:0)-(keys.w?1:0));let v=new THREE.Vector3(x,0,z);if(v.length()>1)v.normalize();
   player.position.addScaledVector(v,4.5*dt);
   const moving=v.lengthSq()>.01;
-  if(moving){player.rotation.y=Math.atan2(v.x,v.z);stepTimer-=dt;if(stepTimer<=0){stepSound();stepTimer=.42}}else stepTimer=0;
+  if(moving){player.rotation.y=firstPerson?viewYaw:Math.atan2(v.x,v.z);stepTimer-=dt;if(stepTimer<=0){stepSound();stepTimer=.42}}else stepTimer=0;
   const walk=Math.sin(animTime*10)*.55;legL.rotation.x=moving?walk:0;legR.rotation.x=moving?-walk:0;armL.rotation.x=moving?-walk*.7:0;armR.rotation.x=moving?walk*.7:0;
   if(carried){armL.rotation.x=-1.1;armR.rotation.x=-1.1;pBody.position.y=.65+Math.sin(animTime*4)*.025}
   if(workingAnim>0){workingAnim-=dt;armL.rotation.x=-1.4;armR.rotation.x=-.7;pBody.rotation.z=Math.sin(animTime*14)*.08}
@@ -469,11 +482,22 @@ function update(dt){
  nearVine=null;let best=999;if(!driving)for(const v of workVines){if(v.userData.done)continue;let d=distance(player,v);if(d<best){best=d;nearVine=v}}
  nearTractor=!driving&&distance(player,tractor)<3;
  let show=nearTractor||nearVine||nearestBasket()||nearestCrate()||carried||nearHouse()||nearGarage()||isWinery()||isCellar();document.getElementById('interact').style.display=show?'block':'none';
+ const fullCrates=harvestCrates.filter(c=>c.userData.liters>0);
+ const nearestC=nearestCrate();
+ if(!driving && (nearTractor||nearestBasket()||nearestC||distance(player,pressObj)<6)){
+   const card=document.getElementById('stationCard');
+   if(distance(player,pressObj)<6) card.innerHTML='<b>⚙️ Kelterannahme</b><br>'+fullCrates.length+' gefüllte Kiste(n) · '+harvestLiters+' L im Erntekreislauf<br><small>Erntekiste hier abstellen, um sie zu leeren.</small>';
+   else if(nearTractor) card.innerHTML='<b>🚜 Ernte-Transport</b><br>Gefüllte Kisten am Anhänger: '+fullCrates.filter(c=>c.position.distanceTo(trailer.position)<4).length+'<br><small>Korb → Kiste → Traktor → Kelter</small>';
+   else card.innerHTML='<b>🍇 Materialfluss</b><br>Körbe: '+baskets.length+' · Kisten: '+fullCrates.length;
+   card.style.display='block';
+ } else document.getElementById('stationCard').style.display='none';
  let label=nearTractor?'🚜 Ein-/Aussteigen':(nearHouse()?'🏡 Haus':(nearGarage()?'🔧 Garage':(carried?'📦 Transportieren':(nearestBasket()?'🧺 Korb aufnehmen':(nearestCrate()?'📦 Kiste aufnehmen':(nearVine?'🍇 Ernten':'E Interagieren'))))));document.getElementById('interact').textContent=label;
- document.getElementById('status').textContent=(driving?'🚜 Traktor · ':'👨‍🌾 Zu Fuß · ')+'Frühling · Tag '+day+' · '+money.toLocaleString('de-DE')+' €';
+ document.getElementById('status').textContent=(driving?'🚜 Traktor · ':(firstPerson?'👁️ First Person · ':'👨‍🌾 Zu Fuß · '))+'Frühling · Tag '+day+' · '+money.toLocaleString('de-DE')+' €';
  document.getElementById('count').textContent=workVines.filter(v=>v.userData.done).length+' / '+workVines.length;
- document.getElementById('stock').textContent='Trauben '+harvestLiters+' L · Tank '+tankLiters+' L · Flaschen '+bottles+' · Kisten '+wineCrates;
- document.getElementById('flow').textContent='🍇 Rebe → 🧺 Körbe → 📦 Erntekisten → 🚜 Transport → ⚙️ Presse → 🛢️ Tank → 🍾 Flaschen';
+ const fullCrates=harvestCrates.filter(c=>c.userData.liters>0).length;
+ const basketLiters=baskets.reduce((a,b)=>a+(b.userData.liters||0),0);
+ document.getElementById('stock').textContent='Trauben '+harvestLiters+' L · 🧺 '+basketLiters+' L · 📦 '+fullCrates+' Kisten · Tank '+tankLiters+' L · Flaschen '+bottles+' · Wein-Kisten '+wineCrates;
+ document.getElementById('flow').textContent='🍇 Rebe → 🧺 Korb → 🚜 Erntekiste → 🏭 Kelterannahme → ⚙️ Presse → 🛢️ Tank → 🍾 Flaschen → 📦 Verkaufskiste';
 }
 function cameraUpdate(){
  let target=driving?tractor:player;let behind=driving?8:6.5;
@@ -482,10 +506,10 @@ function cameraUpdate(){
 }
 function ui(){stick.style.display=driving?'none':'block';document.getElementById('drive').style.display=driving?'block':'none';}
 let last=performance.now();
-function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;update(dt);cameraUpdate();ui();renderer.render(scene,camera);requestAnimationFrame(loop)}
+function loop(t){let dt=Math.min(.04,(t-last)/1000);last=t;try{update(dt);cameraUpdate();ui();renderer.render(scene,camera)}catch(err){console.error(err);msg('⚠️ Anzeige-Fehler abgefangen – Spiel läuft weiter.')}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-msg('0.8.1: Grafik, Zoom, Gebäude & Materialfluss – 🔊 Ton starten und los geht’s!');
+msg('0.8.1 FIX2: stabilisiert · Zoom · Tacho · First Person · 🔊 Ton starten');
 
 /* ================= 0.8.1 GRAFIK-POLISH + KAMERA + TACHO ================= */
 const speedometer=document.getElementById('speedometer');
@@ -493,29 +517,72 @@ const speedValue=document.getElementById('speedValue');
 const stationCard=document.getElementById('stationCard');
 const zoomUI=document.getElementById('zoom');
 let cameraDistance=6.5;
+let currentSpeedKmh=0;
 let cameraHeight=4.9;
+let firstPerson=false;
+let viewYaw=0, viewPitch=-0.10;
+let lookActive=false, lookLastX=0, lookLastY=0;
 let pinchStartDist=0, pinchStartZoom=6.5;
 
 function setZoom(v){
  cameraDistance=Math.max(3.8,Math.min(12,v));
  cameraHeight=driving?Math.max(3.6,cameraDistance*.72):Math.max(3.1,cameraDistance*.72);
+ if(firstPerson) camera.fov=Math.max(52,Math.min(82,72+(v-6.5)*2.2));
+ else camera.fov=60;
+ camera.updateProjectionMatrix();
 }
+function setViewMode(fp){
+ firstPerson=!!fp;
+ const btn=document.getElementById('viewMode');
+ btn.textContent=firstPerson?'👁️ Third Person':'👁️ First Person';
+ btn.style.background=firstPerson?'#b88725':'#24372b';
+ if(firstPerson){
+   viewYaw=player.rotation.y; viewPitch=-0.08; player.visible=false;
+   cameraDistance=6.5; camera.fov=68; camera.updateProjectionMatrix();
+   msg('👁️ First Person · rechts wischen zum Umschauen');
+ }else{
+   if(!driving) player.visible=true; camera.fov=60; camera.updateProjectionMatrix();
+   msg('👁️ Third Person');
+ }
+}
+document.getElementById('viewMode').onclick=()=>setViewMode(!firstPerson);
+setZoom(cameraDistance);
 document.getElementById('zoomIn').onclick=()=>setZoom(cameraDistance-.8);
 document.getElementById('zoomOut').onclick=()=>setZoom(cameraDistance+.8);
 
 renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraDistance+(e.deltaY>0?.45:-.45))},{passive:false});
 renderer.domElement.addEventListener('touchstart',e=>{
+ if(firstPerson && e.touches.length===1){
+   const t=e.touches[0];
+   if(t.clientX>innerWidth*.42 && t.clientY<innerHeight-170){lookActive=true;lookLastX=t.clientX;lookLastY=t.clientY;}
+ }
  if(e.touches.length===2){
+  lookActive=false;
   pinchStartDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
   pinchStartZoom=cameraDistance;
  }
 },{passive:true});
 renderer.domElement.addEventListener('touchmove',e=>{
+ if(firstPerson && e.touches.length===1 && lookActive){
+   const t=e.touches[0];
+   viewYaw-= (t.clientX-lookLastX)*.006;
+   viewPitch-= (t.clientY-lookLastY)*.004;
+   viewPitch=Math.max(-0.9,Math.min(0.55,viewPitch));
+   lookLastX=t.clientX;lookLastY=t.clientY;
+ }
  if(e.touches.length===2){
   const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
   if(pinchStartDist) setZoom(pinchStartZoom-(d-pinchStartDist)*.012);
  }
 },{passive:true});
+renderer.domElement.addEventListener('touchend',()=>{lookActive=false;},{passive:true});
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(firstPerson && e.pointerType!=='touch' && e.clientX>innerWidth*.38){lookActive=true;lookLastX=e.clientX;lookLastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);}
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+ if(firstPerson && lookActive && e.pointerType!=='touch'){viewYaw-=(e.clientX-lookLastX)*.0045;viewPitch-=(e.clientY-lookLastY)*.003;viewPitch=Math.max(-0.9,Math.min(.55,viewPitch));lookLastX=e.clientX;lookLastY=e.clientY;}
+});
+renderer.domElement.addEventListener('pointerup',()=>lookActive=false);
 
 function detailBox(x,z,w,d,h,c,roofC){
  box([x,h/2,z],[w,h,d],c);
@@ -549,6 +616,8 @@ function doorUnit(x,y,z,rot=0,label=''){
 windowUnit(-34.8,3.4,-22.08); windowUnit(-21.2,3.4,-22.08);
 doorUnit(-28,1.55,-22.18,0,'ANNNAHME');
 box([-28,6.45,-17],[18.8,.28,10.8],0x40312a);
+box([-28,5.2,-21.8],[18.5,.22,.55],0x29231f);
+for(const xx of [-35,-30,-25,-20]) box([xx,4.25,-21.55],[.14,2.0,.14],0x4a382c);
 /* winery chimney and side lean-to */
 box([-35.5,4.8,-15.2],[1.2,2.7,1.1],0x6b4c3b);
 box([-34.8,6.35,-15.2],[1.45,.3,1.35],0x4a352c);
@@ -558,6 +627,11 @@ doorUnit(-8,1.9,-20.7,0,'GARAGE');
 /* house facade detailing */
 windowUnit(12.3,2.8,-20.05);windowUnit(17.7,2.8,-20.05);
 doorUnit(15,1.55,-20.15,0,'WOHNHAUS');
+/* stronger visual separation of production zones */
+box([-28,.12,-14.2],[17.5,.22,3.2],0x74604d);
+box([-28,.13,-18.2],[17.5,.24,3.2],0x5a4b40);
+box([-28,.14,-12.0],[17.5,.26,2.0],0x7d6a55);
+for(const xx of [-35,-30,-25,-20]){const line=box([xx,.28,-16.2],[.16,.06,6.4],0xb59a67);}
 /* cellar entrance so the cellar reads as a distinct space */
 box([-28,.35,-23.0],[4.8,.7,1.7],0x514137);
 box([-30.3,1.45,-23.7],[.35,2.3,1.9],0x45362f);
@@ -577,6 +651,9 @@ stationLabel('🛢️ TANK 1',-31,-15.2);
 stationLabel('🛢️ TANK 2',-34.5,-15.2);
 stationLabel('🍾 ABFÜLLUNG',-28,-12.2);
 
+stationLabel('🔧 GARAGE · GRUBBER',-11,-14.0);
+stationLabel('🧴 HANDSPRITZE',-5,-14.0);
+stationLabel('✂️ REBSCHERE',-2,-18.0);
 /* cellar barrels are now arranged as a real cellar row */
 for(let i=-2;i<=2;i++){
  const bx=-28+i*2.3;
@@ -588,11 +665,23 @@ for(let i=-2;i<=2;i++){
 
 /* camera update replacement: zoomable, more natural */
 cameraUpdate=function(){
- let target=driving?tractor:player;
+ const target=driving?tractor:player;
+ if(!target || !target.position || !target.rotation) return;
+ if(firstPerson && !driving){
+   const eye=new THREE.Vector3(target.position.x,1.62,target.position.z);
+   camera.position.lerp(eye,.22);
+   const look=new THREE.Vector3(
+     eye.x+Math.sin(viewYaw)*Math.cos(viewPitch)*8,
+     eye.y+Math.sin(viewPitch)*8,
+     eye.z+Math.cos(viewYaw)*Math.cos(viewPitch)*8
+   );
+   camera.lookAt(look);
+   return;
+ }
  let behind=driving?Math.max(5.0,cameraDistance+1.5):cameraDistance;
  let pos=new THREE.Vector3(
    target.position.x-Math.sin(target.rotation.y)*behind,
-   driving?cameraHeight:cameraHeight,
+   cameraHeight,
    target.position.z-Math.cos(target.rotation.y)*behind
  );
  camera.position.lerp(pos,.11);
@@ -601,14 +690,14 @@ cameraUpdate=function(){
 
 /* tachometer + context card */
 function updatePolishUI(){
- const sp=driving?Math.abs(((keys.up?1:0)-(keys.down?.65:0))*6.2):0;
+ const sp=driving?Math.abs(((keys.up?1:0)-((keys.down?.65):0))*6.2):0;
  const km=Math.round(sp*7.2);
  speedValue.textContent=String(km);
  speedometer.style.display=driving?'block':'none';
  zoomUI.style.display='flex';
  let card='';
- if(isWinery()&&!driving) card='🏭 WEINGUT · Annahme · Presse · Tanks · Abfüllung';
- else if(isCellar()&&!driving) card='🍷 KELLER · Fässer · Lagerung';
+ if(isWinery()&&!driving) card='🏭 WEINGUT · 🍇 Annahme · ⚙️ Presse · 🛢️ Tanks · 🍾 Abfüllung';
+ else if(isCellar()&&!driving) card='🍷 KELLER · Fässer · Lagerung · Reifung';
  else if(nearGarage()&&!driving) card='🔧 GARAGE · Geräte & Maschinen';
  else if(nearHouse()&&!driving) card='🏡 HAUS · Schlafen & Zeit';
  stationCard.textContent=card;stationCard.style.display=card?'block':'none';
